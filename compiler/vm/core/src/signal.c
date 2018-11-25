@@ -223,7 +223,7 @@ void* rvmSaveSignals(Env* env) {
     return state;
 }
 
-void dumpThreadStackTrace(Env* env, Thread* thread, CallStack* callStack) {
+void dumpThreadStackTrace(Env* env, RvmThread* thread, CallStack* callStack) {
     // NOTE: This function must not be called concurrently. It uses global 
     // variables to transfer data to/from a signal handler.
 

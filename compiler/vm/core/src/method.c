@@ -28,8 +28,8 @@
 DynamicLib* bootNativeLibs = NULL;
 DynamicLib* mainNativeLibs = NULL;
 
-static Mutex nativeLibsLock;
-static Mutex threadStackTraceLock;
+static RvmMutex nativeLibsLock;
+static RvmMutex threadStackTraceLock;
 static jvalue emptyJValueArgs[1];
 static Class* java_lang_StackTraceElement = NULL;
 static Method* java_lang_StackTraceElement_constructor = NULL;

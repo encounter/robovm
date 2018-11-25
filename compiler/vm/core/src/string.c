@@ -40,7 +40,7 @@ typedef struct CacheEntry {
     UT_hash_handle hh;
 } CacheEntry;
 static CacheEntry* internedStrings = NULL;
-static Mutex internedStringsLock;
+static RvmMutex internedStringsLock;
 
 static inline void obtainInternedStringsLock() {
     rvmLockMutex(&internedStringsLock);

@@ -249,7 +249,7 @@ void _rvmHookThreadCreated(Env* env, Object* threadObj) {
     DEBUGF("Thread %lld created", rvmRTGetThreadId(env, threadObj));
 }
 
-void _rvmHookThreadAttached(Env* env, Object* threadObj, Thread* thread) {
+void _rvmHookThreadAttached(Env* env, Object* threadObj, RvmThread* thread) {
     DEBUGF("Thread %p attached, threadObj: %p, thread: %p", rvmRTGetThreadId(env, threadObj), threadObj, thread);
     rvmLockMutex(&writeMutex);
     ChannelError error = { 0 };
@@ -261,7 +261,7 @@ void _rvmHookThreadAttached(Env* env, Object* threadObj, Thread* thread) {
     rvmUnlockMutex(&writeMutex);
 }
 
-void _rvmHookThreadStarting(Env* env, Object* threadObj, Thread* thread) {
+void _rvmHookThreadStarting(Env* env, Object* threadObj, RvmThread* thread) {
     DEBUGF("Thread %lld starting, threadObj: %p, thread: %p", rvmRTGetThreadId(env, threadObj), threadObj, thread);
     rvmLockMutex(&writeMutex);
     ChannelError error = { 0 };
@@ -273,7 +273,7 @@ void _rvmHookThreadStarting(Env* env, Object* threadObj, Thread* thread) {
     rvmUnlockMutex(&writeMutex);
 }
 
-void _rvmHookThreadDetaching(Env* env, Object* threadObj, Thread* thread, Object* throwable) {
+void _rvmHookThreadDetaching(Env* env, Object* threadObj, RvmThread* thread, Object* throwable) {
     DEBUGF("Thread %p detaching, threadObj: %p, thread: %p, throwable: %p", rvmRTGetThreadId(env, threadObj), threadObj, thread, throwable);
     rvmLockMutex(&writeMutex);
     ChannelError error = { 0 };
@@ -549,7 +549,7 @@ static void handleClassFilter(jlong reqId, ChannelError* error) {
 }
 
 static void handleThreadSuspend(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     DebugEnv* debugEnv = (DebugEnv*) thread->env;
@@ -574,7 +574,7 @@ static void handleThreadSuspend(jlong reqId, ChannelError* error) {
 }
 
 static void handleThreadResume(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     // special case: if thread is 0, we set the resumeFlag
@@ -604,7 +604,7 @@ static void handleThreadResume(jlong reqId, ChannelError* error) {
 }
 
 static void handleThreadStep(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     jlong pclow = readChannelLong(clientSocket, error);
@@ -640,7 +640,7 @@ static void handleThreadStep(jlong reqId, ChannelError* error) {
 }
 
 static void handleThreadInvoke(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     void* classOrObjectPtr = (void*)readChannelLong(clientSocket, error);
@@ -708,7 +708,7 @@ static void handleThreadInvoke(jlong reqId, ChannelError* error) {
 }
 
 static void handleNewInstance(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     void* classPtr = (void*)readChannelLong(clientSocket, error);
@@ -762,7 +762,7 @@ static void handleNewInstance(jlong reqId, ChannelError* error) {
 }
 
 static void handleNewString(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     jint stringLength = readChannelInt(clientSocket, error);
@@ -787,7 +787,7 @@ static void handleNewString(jlong reqId, ChannelError* error) {
 }
 
 static void handleNewArray(jlong reqId, ChannelError* error) {
-    Thread* thread = (Thread*)readChannelLong(clientSocket, error);
+    RvmThread* thread = (RvmThread*)readChannelLong(clientSocket, error);
     if(checkError(error)) return;
 
     jint arrayLength = readChannelInt(clientSocket, error);
@@ -1321,12 +1321,12 @@ static void writeStopOrExceptionEvent(Env* env, char event, Object* throwable, j
 
 void _rvmHookClassLoaded(Env* env, Class* clazz, void* classInfo) {
     Object* javaThread = NULL;
-    Thread* thread = NULL;
+    RvmThread* thread = NULL;
 
     // check if there's a filter for that class
     rvmLockMutex(&classFilterMutex);
     for(ClassFilter* f = classFilters; f; f = f->next) {
-        if(!strcmp(f->className, clazz->name)) {            
+        if(!strcmp(f->className, clazz->name)) {
             if(env->currentThread) {
                 javaThread = env->currentThread->threadObj;
                 thread = env->currentThread;

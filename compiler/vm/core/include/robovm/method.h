@@ -52,7 +52,7 @@ extern jboolean rvmLoadNativeLibrary(Env* env, const char* path, Object* classLo
 extern Method* rvmFindMethodAtAddress(Env* env, void* address);
 extern Method* rvmGetCallingMethod(Env* env);
 extern CallStack* rvmCaptureCallStack(Env* env);
-extern CallStack* rvmCaptureCallStackForThread(Env* env, Thread* thread);
+extern CallStack* rvmCaptureCallStackForThread(Env* env, RvmThread* thread);
 extern CallStackFrame* rvmResolveCallStackFrame(Env* env, CallStackFrame* frame);
 extern ObjectArray* rvmCallStackToStackTraceElements(Env* env, CallStack* callStack, jint first);
 extern void rvmCallVoidInstanceMethod(Env* env, Object* obj, Method* method, ...);

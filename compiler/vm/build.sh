@@ -67,7 +67,7 @@ fi
 
 # Validate targets
 for T in $TARGETS; do
-  if ! [[ $T =~ (macosx-(x86_64|x86))|(ios-(x86_64|x86|thumbv7|arm64))|(linux-(x86_64|x86)) ]] ; then
+  if ! [[ $T =~ (macosx-(x86_64|x86))|(ios-(x86_64|x86|thumbv7|arm64))|(linux-(x86_64|x86))|switch-arm64 ]] ; then
     echo "Unsupported target: $T"
     exit 1
   fi
@@ -109,6 +109,10 @@ fi
 for T in $TARGETS; do
   OS=${T%%-*}
   ARCH=${T#*-}
+  if [ "$OS" == "switch" ]; then
+    CC=/opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc
+    CXX=/opt/devkitpro/devkitA64/bin/aarch64-none-elf-g++
+  fi
   for B in $BUILDS; do
     BUILD_TYPE=$B
     mkdir -p "$BASE/target/build/$T-$B"

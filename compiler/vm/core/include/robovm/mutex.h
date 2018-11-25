@@ -16,25 +16,29 @@
 #ifndef ROBOVM_MUTEX_H
 #define ROBOVM_MUTEX_H
 
+#ifdef HORIZON
+#include "switch_pthread.h"
+#else
 #include <pthread.h>
+#endif
 
 /* Mutex wrappers around pthread mutexes */
-static inline jint rvmInitMutex(Mutex* mutex) {
+static inline jint rvmInitMutex(RvmMutex* mutex) {
     pthread_mutexattr_t mutexAttrs;
     pthread_mutexattr_init(&mutexAttrs);
     pthread_mutexattr_settype(&mutexAttrs, PTHREAD_MUTEX_RECURSIVE);
     return pthread_mutex_init(mutex, &mutexAttrs);
 }
-static inline jint rvmDestroyMutex(Mutex* mutex) {
+static inline jint rvmDestroyMutex(RvmMutex* mutex) {
     return pthread_mutex_destroy(mutex);
 }
-static inline jint rvmLockMutex(Mutex* mutex) {
+static inline jint rvmLockMutex(RvmMutex* mutex) {
     return pthread_mutex_lock(mutex);
 }
-static inline jint rvmTryLockMutex(Mutex* mutex) {
+static inline jint rvmTryLockMutex(RvmMutex* mutex) {
     return pthread_mutex_trylock(mutex);
 }
-static inline jint rvmUnlockMutex(Mutex* mutex) {
+static inline jint rvmUnlockMutex(RvmMutex* mutex) {
     return pthread_mutex_unlock(mutex);
 }
 

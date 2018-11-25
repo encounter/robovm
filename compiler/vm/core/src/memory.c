@@ -94,8 +94,8 @@ static uint32_t referentEntryGCKind;
 
 static RefTable globalRefs = {0};
 
-static Mutex referentsLock;
-static Mutex globalRefsLock;
+static RvmMutex referentsLock;
+static RvmMutex globalRefsLock;
 
 // The GC kind used when allocating Object arrays
 static uint32_t objectArrayGCKind;

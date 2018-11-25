@@ -66,7 +66,7 @@ extern void captureCallStack(Env* env, Frame* fp, CallStack* data, jint maxLengt
 extern CallStack* captureCallStackFromFrame(Env* env, Frame* fp);
 
 /* signal.c */
-extern void dumpThreadStackTrace(Env* env, Thread* thread, CallStack* callStack);
+extern void dumpThreadStackTrace(Env* env, RvmThread* thread, CallStack* callStack);
 
 /* class.c */
 extern uint32_t nextClassId();
@@ -447,7 +447,7 @@ static inline void proxy0ReturnDouble(CallInfo* ci, jdouble d) {
     ci->returnType = RETURN_TYPE_DOUBLE;
 }
 
-#elif IOS && RVM_ARM64
+#elif (IOS || HORIZON) && RVM_ARM64
 
 #define MAX_INT_ARGS 8
 #define MAX_FP_ARGS 8

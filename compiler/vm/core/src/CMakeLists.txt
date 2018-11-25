@@ -39,6 +39,9 @@ if(DARWIN)
   endif()
   set_property(SOURCE ${OBJC_SRC} PROPERTY LANGUAGE C)
   set_property(SOURCE ${OBJC_SRC} PROPERTY COMPILE_FLAGS ${OBJC_FLAGS})
+elseif(HORIZON)
+  add_definitions(-DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
+  include_directories(/opt/devkitpro/libnx/include)
 endif()
 
 # The code in unwind.c doesn't work properly if compiled with tail call optimizations

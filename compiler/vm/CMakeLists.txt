@@ -31,7 +31,7 @@ if(NOT OS)
     SET(ARCH "x86_64")
   ENDIF()
 endif()
-if(NOT OS MATCHES "^(linux|macosx|ios)$")
+if(NOT OS MATCHES "^(linux|macosx|ios|switch)$")
   message(FATAL_ERROR "Unsupported OS: ${OS}")
 endif()
 if(NOT ARCH)
@@ -52,6 +52,9 @@ elseif(OS STREQUAL "ios")
   set(IOS YES)
   set(DARWIN YES)
   set(OS_FAMILY darwin)
+elseif(OS STREQUAL "switch")
+  set(HORIZON YES)
+  set(OS_FAMILY horizon)
 endif()
 
 set(64_BIT NO)
@@ -122,10 +125,12 @@ if(DARWIN)
 endif()
 
 # Set up global C and C++ compiler flags
-set(C_FLAGS "${C_FLAGS} -std=gnu99 -fPIC")
+set(C_FLAGS "${C_FLAGS} -std=gnu11 -fPIC")
 set(CXX_FLAGS "${CXX_FLAGS} -std=gnu++11 -fPIC")
 set(C_CXX_FLAGS "${C_CXX_FLAGS} -Wall -fdata-sections -ffunction-sections -fPIC")
-if(CARCH)
+if(HORIZON)
+  set(C_CXX_FLAGS "${C_CXX_FLAGS}")
+elseif(CARCH)
   set(C_CXX_FLAGS "${C_CXX_FLAGS} -arch ${CARCH}")
 elseif(64_BIT)
   set(C_CXX_FLAGS "${C_CXX_FLAGS} -m64")
@@ -138,6 +143,8 @@ endif()
 if(SYSROOT)
   set(C_CXX_FLAGS "${C_CXX_FLAGS} -isysroot ${SYSROOT}")
   set(CMAKE_OSX_SYSROOT "${SYSROOT}")
+else()
+  set(CMAKE_OSX_SYSROOT "")
 endif()
 if(MACOSX)
   set(C_CXX_FLAGS "${C_CXX_FLAGS} -mmacosx-version-min=${MACOSX_MIN_VERSION}")
@@ -148,7 +155,9 @@ endif()
 
 # Linker flags
 set(LD_FLAGS "${LD_FLAGS} -fPIC")
-if(CARCH)
+if(HORIZON)
+  set(LD_FLAGS "${LD_FLAGS}")
+elseif(CARCH)
   set(LD_FLAGS "${LD_FLAGS} -arch ${CARCH}")
 elseif(64_BIT)
   set(LD_FLAGS "${LD_FLAGS} -m64")
@@ -206,6 +215,8 @@ elseif(DARWIN)
     add_definitions(-DIOS)
   endif()
   add_definitions(-DDARWIN)
+elseif(HORIZON)
+  add_definitions(-DHORIZON -DGC_NO_DLOPEN)
 endif()
 
 if (ARCH STREQUAL "x86_64")
@@ -249,6 +260,7 @@ else()
   set(EXTGC_MARK_DESCR_OFFSET 12)
 endif()
 
+set(EXTGC_C_COMPILER "${CMAKE_C_COMPILER}")
 set(EXTGC_C_FLAGS "${C_CXX_FLAGS} -DGC_DISABLE_INCREMENTAL -DGC_DISCOVER_TASK_THREADS -DGC_FORCE_UNMAP_ON_GCOLLECT -DMARK_DESCR_OFFSET=${EXTGC_MARK_DESCR_OFFSET}")
 set(EXTGC_LD_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 if(DARWIN)
@@ -266,6 +278,14 @@ if (IOS)
     set(EXT_HOST --host=arm-apple-darwin7)
   endif()
 endif()
+if (HORIZON)
+  set(EXT_PATH "$ENV{PATH}:/opt/devkitpro/devkitA64/bin")
+  set(EXTGC_RANLIB "/opt/devkitpro/devkitA64/bin/aarch64-none-elf-ranlib")
+  set(EXTGC_C_COMPILER "/opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc")
+  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN")
+  set(EXT_HOST --host=aarch64-none-elf)
+  set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-munmap=no --enable-parallel-mark=no") # FIXME
+endif()
 ExternalProject_Add(libatomic_ops
   GIT_REPOSITORY https://github.com/ivmai/libatomic_ops.git
   GIT_TAG 4e22546e8a161b6bab93e43c115a22151daf45c5
@@ -277,11 +297,12 @@ ExternalProject_Add(libatomic_ops
 )
 ExternalProject_Add(extgc
   DEPENDS libatomic_ops
-  GIT_REPOSITORY https://github.com/mobivm/bdwgc.git
-  GIT_TAG c1e985028101ec710937b6c721d9f79941a15bce
+  GIT_REPOSITORY https://github.com/encounter/bdwgc.git
+  GIT_TAG 91a1b8b326215475d2dae8b2ca0b7c0d917ff438
   UPDATE_COMMAND ""
   PATCH_COMMAND bash -c "rm -rf libatomic_ops && ln -s ../../../libatomic_ops-prefix/src/libatomic_ops libatomic_ops"
-  CONFIGURE_COMMAND bash -c "CC=${CMAKE_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
+  CONFIGURE_COMMAND bash -xc "./autogen.sh && PATH='${EXT_PATH}' CC=${EXTGC_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' RANLIB='${EXTGC_RANLIB}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
+  BUILD_COMMAND bash -xc "export PATH='${EXT_PATH}' make"
   BUILD_IN_SOURCE 1
 )
 install(FILES ${CMAKE_BINARY_DIR}/gc/lib/libgc.a DESTINATION ${INSTALL_DIR} RENAME libgc${LIB_SUFFIX})

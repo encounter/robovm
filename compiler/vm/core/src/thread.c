@@ -46,9 +46,9 @@ struct DetachedThread {
     DetachedThread* next;
 };
 
-static Mutex threadsLock;
+static RvmMutex threadsLock;
 static pthread_cond_t threadStartCond;
-static Thread* threads = NULL; // List of currently running threads
+static RvmThread* threads = NULL; // List of currently running threads
 static pthread_cond_t threadsChangedCond; // Condition variable notified when the list of threads changes
 static pthread_key_t tlsEnvKey;
 static pthread_key_t tlsThreadKey;
@@ -57,7 +57,7 @@ static Method* getUncaughtExceptionHandlerMethod;
 static Method* uncaughtExceptionMethod;
 static Method* removeThreadMethod;
 static uint32_t threadGCKind;
-static Mutex detachedThreadsLock;
+static RvmMutex detachedThreadsLock;
 static DetachedThread* detachedThreads = NULL;
 
 static jlong getUniqueThreadId(pthread_t thread) {
@@ -200,8 +200,8 @@ static void* getStackAddress(void) {
     return result;
 }
 
-static Thread* allocThread(Env* env) {
-    Thread* thread = (Thread*) allocateMemoryOfKind(env, sizeof(Thread), threadGCKind);
+static RvmThread* allocThread(Env* env) {
+    RvmThread* thread = (Thread*) allocateMemoryOfKind(env, sizeof(Thread), threadGCKind);
     if (!thread) return NULL;
     thread->status = THREAD_INITIALIZING;
     return thread;
@@ -223,7 +223,7 @@ static void freeThreadId(jint threadId) {
     assert(!rvmIsBitSet(threadIdMap, threadId - 1));
 }
 
-static jboolean initThread(Env* env, Thread* thread, Object* threadObj) {
+static jboolean initThread(Env* env, RvmThread* thread, Object* threadObj) {
     // NOTE: threadsLock must be held
     int err = 0;
     pthread_cond_init(&thread->waitCond, NULL);
@@ -248,7 +248,7 @@ static jboolean initThread(Env* env, Thread* thread, Object* threadObj) {
     return TRUE;
 }
 
-static void cleanupThreadMutex(Env* env, Thread* thread) {
+static void cleanupThreadMutex(Env* env, RvmThread* thread) {
     // NOTE: threadsLock must be held
     pthread_cond_destroy(&thread->waitCond);
     rvmDestroyMutex(&thread->waitMutex);
@@ -277,7 +277,7 @@ static void clearThreadEnv() {
 /**
 * Stores the current thread in a TLS
 */
-static void setThreadTLS(Env* env, Thread* thread) {
+static void setThreadTLS(Env* env, RvmThread* thread) {
     int err = pthread_setspecific(tlsThreadKey, thread);
     assert(err == 0);
     if (err != 0) {
@@ -292,9 +292,9 @@ static void clearThreadTLS() {
 static jint attachThread(VM* vm, Env** envPtr, char* name, Object* group, jboolean daemon) {
     Env* env = *envPtr; // env is NULL if rvmAttachCurrentThread() was called. If non NULL rvmInitThreads() was called.
     if (!env) {
-        // If the thread was already attached there's an Env* and a Thread* associated with the thread.
+        // If the thread was already attached there's an Env* and a RvmThread* associated with the thread.
         env = (Env*) pthread_getspecific(tlsEnvKey);
-        Thread* thread = (Thread*) pthread_getspecific(tlsThreadKey);
+        RvmThread* thread = (Thread*) pthread_getspecific(tlsThreadKey);
         if (env && thread) {
             env->attachCount++;
             *envPtr = env;
@@ -313,7 +313,7 @@ static jint attachThread(VM* vm, Env** envPtr, char* name, Object* group, jboole
     setThreadEnv(env);
     if (rvmExceptionOccurred(env)) goto error;
 
-    Thread* thread = allocThread(env);
+    RvmThread* thread = allocThread(env);
     if (!thread) goto error;
     thread->stackAddr = getStackAddress();
     thread->pThread = pthread_self();
@@ -363,7 +363,7 @@ error:
     return JNI_ERR;
 }
 
-static void threadExitUncaughtException(Env* env, Thread* thread) {
+static void threadExitUncaughtException(Env* env, RvmThread* thread) {
     Object* throwable = rvmExceptionClear(env);
     Object* handler = rvmCallObjectInstanceMethod(env, (Object*) thread->threadObj, getUncaughtExceptionHandlerMethod);
     // Ignore exception thrown by getUncaughtException()
@@ -393,7 +393,7 @@ static jint detachThread(Env* env, jboolean ignoreAttachCount, jboolean unregist
 
     // TODO: Release all monitors still held by this thread (should only be monitors acquired from JNI code)
 
-    Thread* thread = env->currentThread;
+    RvmThread* thread = env->currentThread;
     Object* threadObj = thread->threadObj;
 
     if (wasAttached) {
@@ -507,14 +507,14 @@ jint rvmDetachCurrentThread(VM* vm, jboolean ignoreAttachCount, jboolean unregis
 
 typedef struct ThreadEntryPointArgs {
     Env* env;
-    Thread* thread;
+    RvmThread* thread;
     Object* threadObj;
 } ThreadEntryPointArgs;
 
 static void* startThreadEntryPoint(void* _args) {
     ThreadEntryPointArgs* args = (ThreadEntryPointArgs*) _args;
     Env* env = args->env;
-    Thread* thread = args->thread;
+    RvmThread* thread = args->thread;
     Object* threadObj = args->threadObj;
 
     rvmLockThreadsList();
@@ -570,7 +570,7 @@ jlong rvmStartThread(Env* env, Object* threadObj) {
         rvmUnlockThreadsList();
         return 0;
     }
-    Thread* thread = allocThread(env);
+    RvmThread* thread = allocThread(env);
     if (!thread) {
         rvmUnlockThreadsList();
         return 0;
@@ -628,7 +628,7 @@ void rvmJoinNonDaemonThreads(Env* env) {
     while (1) {
         // Count the number of non-daemon thread.
         jint count = 0;
-        Thread* thread = NULL;
+        RvmThread* thread = NULL;
         DL_FOREACH(threads, thread) {
             assert(thread->threadObj != NULL);
             if (!rvmRTIsDaemonThread(env, thread->threadObj)) {
@@ -644,14 +644,14 @@ void rvmJoinNonDaemonThreads(Env* env) {
     rvmUnlockThreadsList();
 }
 
-jint rvmChangeThreadStatus(Env* env, Thread* thread, jint newStatus) {
+jint rvmChangeThreadStatus(Env* env, RvmThread* thread, jint newStatus) {
     jint oldStatus = thread->status;
     if (oldStatus == newStatus) return newStatus;
     rvmAtomicStoreInt(&thread->status, newStatus);
     return oldStatus;
 }
 
-void rvmChangeThreadPriority(Env* env, Thread* thread, jint priority) {   
+void rvmChangeThreadPriority(Env* env, RvmThread* thread, jint priority) {   
     pthread_attr_t tattr;
     int ret;
     ret = pthread_attr_init(&tattr);
@@ -671,7 +671,7 @@ void rvmChangeThreadPriority(Env* env, Thread* thread, jint priority) {
     if(ret != 0) rvmAbort("pthread_attr_getschedpolicy failed");
 }
 
-void rvmThreadNameChanged(Env* env, Thread* thread) {
+void rvmThreadNameChanged(Env* env, RvmThread* thread) {
     // Signal the threadsChangedCond conditional variable to notify anyone
     // interested (debugger).
     rvmLockThreadsList();
@@ -693,8 +693,8 @@ jboolean rvmHasCurrentThread(Env* env) {
 
 Thread* rvmGetThreadByThreadId(Env* env, uint32_t threadId) {
     rvmLockThreadsList();
-    Thread* result = NULL;
-    Thread* thread = NULL;
+    RvmThread* result = NULL;
+    RvmThread* thread = NULL;
     DL_FOREACH(threads, thread) {
         if (thread->threadId == threadId) {
             result = thread;

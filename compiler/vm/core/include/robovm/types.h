@@ -48,13 +48,13 @@ typedef struct ITables ITables;
 typedef struct ITable ITable;
 typedef struct TypeInfo TypeInfo;
 typedef struct DataObject DataObject;
-typedef struct Thread Thread;
+typedef struct RvmThread RvmThread;
 typedef struct Monitor Monitor;
 typedef struct Array Array;
 typedef struct EnclosingMethod EnclosingMethod;
 typedef struct InnerClass InnerClass;
 typedef struct Env Env;
-typedef pthread_mutex_t Mutex;
+typedef pthread_mutex_t RvmMutex;
 
 struct Field {
   Field* next;
@@ -174,7 +174,7 @@ struct Class {
   Class* componentType;
   void* initializer;       // Points to the <clinit> method implementation of the class. NULL if there is no <clinit>.
   jint flags;              // Low 16-bits are access flags. High 16-bits are RoboVM specific flags defined in class.h.
-  Thread* initThread;      // The Thread which is currently initializing this class.
+  RvmThread* initThread;      // The Thread which is currently initializing this class.
   Interface* _interfaces;  // Lazily loaded linked list of interfaces. Use rvmGetInterfaces() to get this value.
   Field* _fields;          // Lazily loaded linked list of fields. Use rvmGetFields() to get this value.
   Method* _methods;        // Lazily loaded linked list of methods. Use rvmGetMethods() to get this value.
@@ -207,27 +207,27 @@ struct EnclosingMethod {
 };
 
 struct Monitor {
-  Thread*     owner;          /* which thread currently owns the lock? */
+  RvmThread*     owner;          /* which thread currently owns the lock? */
   int         lockCount;      /* owner's recursive lock depth */
   Object*     obj;            /* what object are we part of [debug only] */
 
-  Thread*     waitSet;  /* threads currently waiting on this monitor */
+  RvmThread*     waitSet;  /* threads currently waiting on this monitor */
   Monitor*    next;
-  Mutex lock;
+  RvmMutex lock;
 };
 
-struct Thread {
+struct RvmThread {
   jint threadId;
   Env* env;
   Object* threadObj;
-  struct Thread* waitNext;
-  struct Thread* prev;
-  struct Thread* next;
+  struct RvmThread* waitNext;
+  struct RvmThread* prev;
+  struct RvmThread* next;
   Monitor* waitMonitor;
   pthread_t pThread;
   void* stackAddr;
   jboolean interrupted;
-  Mutex waitMutex;
+  RvmMutex waitMutex;
   jint status;
   pthread_cond_t waitCond;
   sigset_t signalMask;
@@ -439,7 +439,7 @@ struct TrycatchContext {
     double d13;
     double d14;
     double d15;
-#elif defined(DARWIN) && defined(RVM_ARM64)
+#elif (defined(DARWIN) || defined(HORIZON)) && defined(RVM_ARM64)
     void* sp; // x31
     void* x19;
     void* x20;
@@ -470,7 +470,7 @@ struct Env {
     JNIEnv jni;
     VM* vm;
     Object* throwable;
-    Thread* currentThread;
+    RvmThread* currentThread;
     void* reserved0; // Used internally
     void* reserved1; // Used internally
     GatewayFrame* gatewayFrames;
@@ -489,7 +489,7 @@ typedef struct {
     void* pchigh;
     void* pclow2;
     void* pchigh2;
-    Mutex suspendMutex;
+    RvmMutex suspendMutex;
     pthread_cond_t suspendCond;
     jboolean suspended;
     jboolean stepping;

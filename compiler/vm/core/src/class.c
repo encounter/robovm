@@ -115,7 +115,7 @@ static ObjectArray* longsCache = NULL;
 static Method* java_lang_Float_valueOf = NULL;
 static Method* java_lang_Double_valueOf = NULL;
 
-static Mutex classLock;
+static RvmMutex classLock;
 
 typedef struct LoadedClassEntry {
     const char* key;      // The class name
