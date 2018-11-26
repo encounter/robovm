@@ -19,9 +19,9 @@
 void _rvmHookBeforeAppEntryPoint(Env* env, char* mainClass);
 void _rvmHookBeforeMainThreadAttached(Env* env);
 void _rvmHookThreadCreated(Env* env, Object* threadObj);
-void _rvmHookThreadAttached(Env* env, Object* threadObj, Thread* thread);
-void _rvmHookThreadStarting(Env* env, Object* threadObj, Thread* thread);
-void _rvmHookThreadDetaching(Env* env, Object* threadObj, Thread* thread, Object* throwable);
+void _rvmHookThreadAttached(Env* env, Object* threadObj, RvmThread* thread);
+void _rvmHookThreadStarting(Env* env, Object* threadObj, RvmThread* thread);
+void _rvmHookThreadDetaching(Env* env, Object* threadObj, RvmThread* thread, Object* throwable);
 void _rvmHookClassLoaded(Env* env, Class* clazz, void* classInfo);
 void _rvmHookExceptionRaised(Env* env, Object* throwable, jboolean isCaught);
 jboolean _rvmHookSetupTCPChannel(Options* options);
@@ -45,17 +45,17 @@ static inline void rvmHookThreadCreated(Env* env, Object* threadObj) {
         _rvmHookThreadCreated(env, threadObj);
     }
 }
-static inline void rvmHookThreadAttached(Env* env, Object* threadObj, Thread* thread) {
+static inline void rvmHookThreadAttached(Env* env, Object* threadObj, RvmThread* thread) {
     if (env->vm->options->enableHooks) {
         _rvmHookThreadAttached(env, threadObj, thread);
     }
 }
-static inline void rvmHookThreadStarting(Env* env, Object* threadObj, Thread* thread) {
+static inline void rvmHookThreadStarting(Env* env, Object* threadObj, RvmThread* thread) {
     if (env->vm->options->enableHooks) {
         _rvmHookThreadStarting(env, threadObj, thread);
     }
 }
-static inline void rvmHookThreadDetaching(Env* env, Object* threadObj, Thread* thread, Object* throwable) {
+static inline void rvmHookThreadDetaching(Env* env, Object* threadObj, RvmThread* thread, Object* throwable) {
     if (env->vm->options->enableHooks) {
         _rvmHookThreadDetaching(env, threadObj, thread, throwable);
     }

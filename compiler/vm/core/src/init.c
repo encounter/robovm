@@ -22,8 +22,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
+#ifdef HORIZON
+#include "horizon/signal.h"
+#else
 #include <dlfcn.h>
 #include <signal.h>
+#endif
 #if defined(IOS) && (defined(RVM_ARMV7) || defined(RVM_THUMBV7))
 #   include <fenv.h>
 #endif
@@ -31,7 +35,7 @@
 #include "utlist.h"
 #include <unistd.h>
 
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && !defined(HORIZON)
 #   include <execinfo.h>
 #endif
 
@@ -80,9 +84,11 @@ static char* absolutize(char* basePath, char* rel, char* dest) {
 }
 
 static jboolean ignoreSignal(int signo) {
+#ifndef HORIZON
     if (signal(signo, SIG_IGN) == SIG_ERR) {
         return FALSE;
     }
+#endif
     return TRUE;
 }
 
@@ -190,6 +196,7 @@ void rvmParseOption(char* arg, Options* options) {
 }
 
 static void parseRoboVMIni(Options* options) {
+#ifndef HORIZON
     char path[PATH_MAX];
 
     // Look for a robovm.ini next to the executable
@@ -211,6 +218,7 @@ static void parseRoboVMIni(Options* options) {
         }
         fclose(f);
     }
+#endif
 }
 
 jboolean rvmInitOptions(int argc, char* argv[], Options* options, jboolean ignoreRvmArgs) {
@@ -219,7 +227,9 @@ jboolean rvmInitOptions(int argc, char* argv[], Options* options, jboolean ignor
         if (!realpath(argv[0], options->imagePath)) {
             return FALSE;
         }
-    } else {
+    }
+#ifndef HORIZON
+    else {
         // We're called via JNI. The caller could already have set
         // imagePath. If not we try to determine it via dladdr().
         if (strlen(options->imagePath) == 0) {
@@ -230,6 +240,7 @@ jboolean rvmInitOptions(int argc, char* argv[], Options* options, jboolean ignor
             strncpy(options->imagePath, dlinfo.dli_fname, sizeof(options->imagePath) - 1);
         }
     }
+#endif
 
     if (strlen(options->resourcesPath) == 0) {
         strncpy(options->resourcesPath, options->imagePath, sizeof(options->resourcesPath) - 1);
@@ -332,6 +343,7 @@ Env* rvmStartup(Options* options) {
     TRACE("Initializing GC");
     if (!initGC(options)) return NULL;
 
+#ifndef HORIZON
     // Ignore SIGPIPE signals. SIGPIPE interrupts write() calls which we don't
     // want. Dalvik does this too in dalvikvm/Main.cpp.
     if (!ignoreSignal(SIGPIPE)) return NULL;
@@ -339,6 +351,7 @@ Env* rvmStartup(Options* options) {
     // Ignore SIGXFSZ signals. SIGXFSZ is raised when writing beyond the RLIMIT_FSIZE
     // of the current process (at least on Darwin) using pwrite().
     if (!ignoreSignal(SIGXFSZ)) return NULL;
+#endif
 
     VM* vm = rvmCreateVM(options);
     if (!vm) return NULL;
@@ -530,7 +543,7 @@ void rvmAbort(char* format, ...) {
         va_end(args);
         fprintf(stderr, "\n");
     }
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && !defined(HORIZON)
      void* callstack[256];
      int frames = backtrace(callstack, 256);
      char** strs = backtrace_symbols(callstack, frames);
@@ -542,9 +555,10 @@ void rvmAbort(char* format, ...) {
 }
 
 DynamicLib* rvmOpenDynamicLib(Env* env, const char* file, char** errorMsg) {
-    *errorMsg = NULL;
     DynamicLib* dlib = NULL;
 
+#ifndef HORIZON
+    *errorMsg = NULL;
     void* handle = dlopen(file, RTLD_LOCAL | RTLD_LAZY);
     if (!handle) {
         *errorMsg = dlerror();
@@ -568,13 +582,16 @@ DynamicLib* rvmOpenDynamicLib(Env* env, const char* file, char** errorMsg) {
     } else {
         strncpy(dlib->path, env->vm->options->imagePath, sizeof(dlib->path) - 1);
     }
+#endif
 
     return dlib;
 }
 
 void rvmCloseDynamicLib(Env* env, DynamicLib* lib) {
+#ifndef HORIZON
     dlclose(lib->handle);
     rvmFreeMemoryUncollectable(env, lib);
+#endif
 }
 
 jboolean rvmHasDynamicLib(Env* env, DynamicLib* lib, DynamicLib* libs) {
@@ -594,12 +611,14 @@ void rvmAddDynamicLib(Env* env, DynamicLib* lib, DynamicLib** libs) {
 void* rvmFindDynamicLibSymbol(Env* env, DynamicLib* libs, const char* symbol, jboolean searchAll) {
     TRACEF("Searching for symbol '%s'", symbol);
 
+#ifndef HORIZON
     DynamicLib* dlib = NULL;
     LL_FOREACH(libs, dlib) {
         void* v = dlsym(dlib->handle, symbol);
         if (v) return v;
         if (!searchAll) return NULL;
     }
+#endif
     return NULL;
 }
 

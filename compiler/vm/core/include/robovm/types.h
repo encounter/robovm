@@ -16,10 +16,15 @@
 #ifndef ROBOVM_TYPES_H
 #define ROBOVM_TYPES_H
 
+#ifdef HORIZON
+#include "horizon/pthread.h"
+#include "horizon/signal.h"
+#else
 #include <pthread.h>
+#include <signal.h>
+#endif
 #include <jni.h>
 #include <limits.h>
-#include <signal.h>
 
 #undef FALSE
 #undef TRUE

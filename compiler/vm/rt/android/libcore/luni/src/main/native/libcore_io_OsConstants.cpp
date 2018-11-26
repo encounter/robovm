@@ -27,7 +27,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(HORIZON)
 // RoboVM note: Darwin doesn't have sys/capability.h
 #include <sys/capability.h>
 #endif
@@ -63,7 +63,7 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "AI_PASSIVE", AI_PASSIVE);
     initConstant(env, c, "AI_V4MAPPED", AI_V4MAPPED);
 // RoboVM note: Darwin doesn't have sys/capability.h
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(HORIZON)
     initConstant(env, c, "CAP_AUDIT_CONTROL", CAP_AUDIT_CONTROL);
     initConstant(env, c, "CAP_AUDIT_WRITE", CAP_AUDIT_WRITE);
     initConstant(env, c, "CAP_CHOWN", CAP_CHOWN);
@@ -238,7 +238,9 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
 #endif
     initConstant(env, c, "IFF_MULTICAST", IFF_MULTICAST);
     initConstant(env, c, "IFF_NOARP", IFF_NOARP);
+#ifndef HORIZON
     initConstant(env, c, "IFF_NOTRAILERS", IFF_NOTRAILERS);
+#endif
     initConstant(env, c, "IFF_POINTOPOINT", IFF_POINTOPOINT);
 #if defined(IFF_PORTSEL)
     initConstant(env, c, "IFF_PORTSEL", IFF_PORTSEL);
@@ -256,7 +258,9 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "IPPROTO_RAW", IPPROTO_RAW);
     initConstant(env, c, "IPPROTO_TCP", IPPROTO_TCP);
     initConstant(env, c, "IPPROTO_UDP", IPPROTO_UDP);
+#ifndef HORIZON
     initConstant(env, c, "IPV6_CHECKSUM", IPV6_CHECKSUM);
+#endif
     initConstant(env, c, "IPV6_MULTICAST_HOPS", IPV6_MULTICAST_HOPS);
     initConstant(env, c, "IPV6_MULTICAST_IF", IPV6_MULTICAST_IF);
     initConstant(env, c, "IPV6_MULTICAST_LOOP", IPV6_MULTICAST_LOOP);
@@ -288,17 +292,21 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "IP_MULTICAST_TTL", IP_MULTICAST_TTL);
     initConstant(env, c, "IP_TOS", IP_TOS);
     initConstant(env, c, "IP_TTL", IP_TTL);
+#ifndef HORIZON
     initConstant(env, c, "MAP_FIXED", MAP_FIXED);
     initConstant(env, c, "MAP_PRIVATE", MAP_PRIVATE);
     initConstant(env, c, "MAP_SHARED", MAP_SHARED);
+#endif
 #if defined(MCAST_JOIN_GROUP)
     initConstant(env, c, "MCAST_JOIN_GROUP", MCAST_JOIN_GROUP);
 #endif
 #if defined(MCAST_LEAVE_GROUP)
     initConstant(env, c, "MCAST_LEAVE_GROUP", MCAST_LEAVE_GROUP);
 #endif
+#ifndef HORIZON
     initConstant(env, c, "MCL_CURRENT", MCL_CURRENT);
     initConstant(env, c, "MCL_FUTURE", MCL_FUTURE);
+#endif
     initConstant(env, c, "MSG_CTRUNC", MSG_CTRUNC);
     initConstant(env, c, "MSG_DONTROUTE", MSG_DONTROUTE);
     initConstant(env, c, "MSG_EOR", MSG_EOR);
@@ -306,9 +314,11 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "MSG_PEEK", MSG_PEEK);
     initConstant(env, c, "MSG_TRUNC", MSG_TRUNC);
     initConstant(env, c, "MSG_WAITALL", MSG_WAITALL);
+#ifndef HORIZON
     initConstant(env, c, "MS_ASYNC", MS_ASYNC);
     initConstant(env, c, "MS_INVALIDATE", MS_INVALIDATE);
     initConstant(env, c, "MS_SYNC", MS_SYNC);
+#endif
     initConstant(env, c, "NI_DGRAM", NI_DGRAM);
     initConstant(env, c, "NI_NAMEREQD", NI_NAMEREQD);
     initConstant(env, c, "NI_NOFQDN", NI_NOFQDN);
@@ -319,7 +329,9 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "O_CREAT", O_CREAT);
     initConstant(env, c, "O_EXCL", O_EXCL);
     initConstant(env, c, "O_NOCTTY", O_NOCTTY);
+#ifndef HORIZON
     initConstant(env, c, "O_NOFOLLOW", O_NOFOLLOW);
+#endif
     initConstant(env, c, "O_NONBLOCK", O_NONBLOCK);
     initConstant(env, c, "O_RDONLY", O_RDONLY);
     initConstant(env, c, "O_RDWR", O_RDWR);
@@ -336,10 +348,12 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "POLLRDNORM", POLLRDNORM);
     initConstant(env, c, "POLLWRBAND", POLLWRBAND);
     initConstant(env, c, "POLLWRNORM", POLLWRNORM);
+#ifndef HORIZON
     initConstant(env, c, "PROT_EXEC", PROT_EXEC);
     initConstant(env, c, "PROT_NONE", PROT_NONE);
     initConstant(env, c, "PROT_READ", PROT_READ);
     initConstant(env, c, "PROT_WRITE", PROT_WRITE);
+#endif
     initConstant(env, c, "R_OK", R_OK);
     initConstant(env, c, "SEEK_CUR", SEEK_CUR);
     initConstant(env, c, "SEEK_END", SEEK_END);
@@ -347,6 +361,7 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "SHUT_RD", SHUT_RD);
     initConstant(env, c, "SHUT_RDWR", SHUT_RDWR);
     initConstant(env, c, "SHUT_WR", SHUT_WR);
+#ifndef HORIZON
     initConstant(env, c, "SIGABRT", SIGABRT);
     initConstant(env, c, "SIGALRM", SIGALRM);
     initConstant(env, c, "SIGBUS", SIGBUS);
@@ -392,6 +407,7 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "SIOCGIFBRDADDR", SIOCGIFBRDADDR);
     initConstant(env, c, "SIOCGIFDSTADDR", SIOCGIFDSTADDR);
     initConstant(env, c, "SIOCGIFNETMASK", SIOCGIFNETMASK);
+#endif
     initConstant(env, c, "SOCK_DGRAM", SOCK_DGRAM);
     initConstant(env, c, "SOCK_RAW", SOCK_RAW);
     initConstant(env, c, "SOCK_SEQPACKET", SOCK_SEQPACKET);
@@ -407,8 +423,10 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "SO_KEEPALIVE", SO_KEEPALIVE);
     initConstant(env, c, "SO_LINGER", SO_LINGER);
     initConstant(env, c, "SO_OOBINLINE", SO_OOBINLINE);
+#ifndef HORIZON
     initConstant(env, c, "SO_PASSCRED", SO_PASSCRED);
     initConstant(env, c, "SO_PEERCRED", SO_PEERCRED);
+#endif
     initConstant(env, c, "SO_RCVBUF", SO_RCVBUF);
     initConstant(env, c, "SO_RCVLOWAT", SO_RCVLOWAT);
     initConstant(env, c, "SO_RCVTIMEO", SO_RCVTIMEO);
@@ -444,11 +462,15 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "S_IXOTH", S_IXOTH);
     initConstant(env, c, "S_IXUSR", S_IXUSR);
     initConstant(env, c, "TCP_NODELAY", TCP_NODELAY);
+#ifndef HORIZON
     initConstant(env, c, "WCONTINUED", WCONTINUED);
     initConstant(env, c, "WEXITED", WEXITED);
+#endif
     initConstant(env, c, "WNOHANG", WNOHANG);
+#ifndef HORIZON
     initConstant(env, c, "WNOWAIT", WNOWAIT);
     initConstant(env, c, "WSTOPPED", WSTOPPED);
+#endif
     initConstant(env, c, "WUNTRACED", WUNTRACED);
     initConstant(env, c, "W_OK", W_OK);
     initConstant(env, c, "X_OK", X_OK);
@@ -502,7 +524,9 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "_SC_OPEN_MAX", _SC_OPEN_MAX);
     initConstant(env, c, "_SC_PAGESIZE", _SC_PAGESIZE);
     initConstant(env, c, "_SC_PAGE_SIZE", _SC_PAGE_SIZE);
+#ifndef HORIZON
     initConstant(env, c, "_SC_PASS_MAX", _SC_PASS_MAX);
+#endif
 #if defined(_SC_PHYS_PAGES)
     initConstant(env, c, "_SC_PHYS_PAGES", _SC_PHYS_PAGES);
 #endif
@@ -547,6 +571,8 @@ extern "C" void Java_libcore_io_OsConstants_initConstants(JNIEnv* env, jclass c)
     initConstant(env, c, "_SC_XOPEN_SHM", _SC_XOPEN_SHM);
     initConstant(env, c, "_SC_XOPEN_UNIX", _SC_XOPEN_UNIX);
     initConstant(env, c, "_SC_XOPEN_VERSION", _SC_XOPEN_VERSION);
+#ifndef HORIZON
     initConstant(env, c, "_SC_XOPEN_XCU_VERSION", _SC_XOPEN_XCU_VERSION);
+#endif
 }
 

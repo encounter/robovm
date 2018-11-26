@@ -16,7 +16,11 @@
 #ifndef PRIVATE_H
 #define PRIVATE_H
 
+#ifdef HORIZON
+#include "horizon/pthread.h"
+#else
 #include <pthread.h>
+#endif
 #include <robovm.h>
 
 /* memory.c */

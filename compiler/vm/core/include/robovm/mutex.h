@@ -17,7 +17,7 @@
 #define ROBOVM_MUTEX_H
 
 #ifdef HORIZON
-#include "switch_pthread.h"
+#include "horizon/pthread.h"
 #else
 #include <pthread.h>
 #endif

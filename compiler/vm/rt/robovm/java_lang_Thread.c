@@ -29,7 +29,7 @@ void Java_java_lang_Thread_internalSleep(Env* env, Class* cls, jlong millis, jin
 
 void Java_java_lang_Thread_internalSetName(Env* env, Class* cls, Object* threadObj, Object* threadName) {
     rvmLockThreadsList();
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     if (thread) {
         rvmThreadNameChanged(env, thread);
     }
@@ -44,7 +44,7 @@ jboolean Java_java_lang_Thread_internalInterrupted(Env* env, Class* cls) {
 
 jboolean Java_java_lang_Thread_internalIsInterrupted(Env* env, Class* cls, Object* threadObj) {
     rvmLockThreadsList();
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     jboolean interrupted = FALSE;
     if (thread) {
         interrupted = thread->interrupted;
@@ -55,7 +55,7 @@ jboolean Java_java_lang_Thread_internalIsInterrupted(Env* env, Class* cls, Objec
 
 void Java_java_lang_Thread_internalInterrupt(Env* env, Class* cls, Object* threadObj) {
     rvmLockThreadsList();
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     if (thread) {
         rvmThreadInterrupt(env, thread);
     }
@@ -79,7 +79,7 @@ void Java_java_lang_Thread_internalYield(Env* env, Class* cls) {
 
 jint Java_java_lang_Thread_internalGetState(Env* env, Class* cls, Object* threadObj) {
     rvmLockThreadsList();
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     jint status = THREAD_ZOMBIE; // If thread==NULL we assume the thread has been finished
     if (thread) {
         status = thread->status;
@@ -90,7 +90,7 @@ jint Java_java_lang_Thread_internalGetState(Env* env, Class* cls, Object* thread
 
 void Java_java_lang_Thread_internalSetPriority(Env* env, Class* cls, Object* threadObj, jint priority) {
     rvmLockThreadsList();
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     if (thread) {
         rvmChangeThreadPriority(env, thread, priority);
     }
@@ -98,7 +98,7 @@ void Java_java_lang_Thread_internalSetPriority(Env* env, Class* cls, Object* thr
 }
 
 ObjectArray* Java_java_lang_Thread_internalGetStackTrace(Env* env, Class* cls, Object* threadObj) {
-    Thread* thread = rvmRTGetNativeThread(env, threadObj);
+    RvmThread* thread = rvmRTGetNativeThread(env, threadObj);
     CallStack* callStack = NULL;
     if (thread) {
         callStack = rvmCaptureCallStackForThread(env, thread);

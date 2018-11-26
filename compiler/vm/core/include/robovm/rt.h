@@ -60,7 +60,7 @@ extern jchar* rvmRTGetStringChars(Env* env, Object* str);
  * specified native Thread being attached to the VM. threadObj has been
  * allocated but no constructor has been called yet.
  */
-extern void rvmRTInitAttachedThread(Env* env, Object* threadObj, Thread* thread, Object* threadName, Object* group, jboolean daemon);
+extern void rvmRTInitAttachedThread(Env* env, Object* threadObj, RvmThread* thread, Object* threadName, Object* group, jboolean daemon);
 
 /**
  * Sets the context ClassLoader of the specified java.lang.Thread instance.
@@ -71,13 +71,13 @@ extern void rvmRTSetThreadContextClassLoader(Env* env, Object* threadObj, Object
  * Returns the native Thread pointer associated with the specified
  * java.lang.Thread instance.
  */
-extern Thread* rvmRTGetNativeThread(Env* env, Object* threadObj);
+extern RvmThread* rvmRTGetNativeThread(Env* env, Object* threadObj);
 
 /**
  * Sets the native Thread pointer associated with the specified
  * java.lang.Thread instance.
  */
-extern void rvmRTSetNativeThread(Env* env, Object* threadObj, Thread* thread);
+extern void rvmRTSetNativeThread(Env* env, Object* threadObj, RvmThread* thread);
 
 /**
  * Sets the native Thread pointer associated with the specified

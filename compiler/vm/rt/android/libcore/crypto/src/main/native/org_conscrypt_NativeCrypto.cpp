@@ -609,8 +609,8 @@ static void throwSSLExceptionWithSslErrors(
     }
 
     // Prepend either our explicit message or a default one.
-    char* str;
-    if (asprintf(&str, "%s: ssl=%p: %s", message, ssl, sslErrorStr) <= 0) {
+    char str[512];
+    if (snprintf(str, sizeof(str), "%s: ssl=%p: %s", message, ssl, sslErrorStr) <= 0) {
         // problem with asprintf, just throw argument message, log everything
         throwSSLExceptionStr(env, message);
         ALOGV("%s: ssl=%p: %s", message, ssl, sslErrorStr);
@@ -636,7 +636,7 @@ static void throwSSLExceptionWithSslErrors(
 
             ERR_error_string_n(err, errStr, sizeof(errStr));
 
-            int ret = asprintf(&str, "%s\n%s (%s:%d %p:0x%08x)",
+            int ret = snprintf(str, sizeof(str), "%s\n%s (%s:%d %p:0x%08x)",
                                (allocStr == NULL) ? "" : allocStr,
                                errStr,
                                file,
@@ -648,19 +648,19 @@ static void throwSSLExceptionWithSslErrors(
                 break;
             }
 
-            free(allocStr);
+//            free(allocStr);
             allocStr = str;
         }
     // For errors during system calls, errno might be our friend.
     } else if (sslErrorCode == SSL_ERROR_SYSCALL) {
-        if (asprintf(&str, "%s, %s", allocStr, strerror(errno)) >= 0) {
-            free(allocStr);
+        if (snprintf(str, sizeof(str), "%s, %s", allocStr, strerror(errno)) >= 0) {
+//            free(allocStr);
             allocStr = str;
         }
     // If the error code is invalid, print it.
     } else if (sslErrorCode > SSL_ERROR_WANT_ACCEPT) {
-        if (asprintf(&str, ", error code is %d", sslErrorCode) >= 0) {
-            free(allocStr);
+        if (snprintf(str, sizeof(str), ", error code is %d", sslErrorCode) >= 0) {
+//            free(allocStr);
             allocStr = str;
         }
     }
@@ -672,7 +672,7 @@ static void throwSSLExceptionWithSslErrors(
     }
 
     ALOGV("%s", allocStr);
-    free(allocStr);
+//    free(allocStr);
     freeOpenSslErrorState();
 }
 

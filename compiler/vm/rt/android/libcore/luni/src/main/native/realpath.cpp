@@ -90,10 +90,12 @@ bool realpath(const char* path, std::string& resolved) {
         // See if we've got a symbolic link, and resolve it if so.
         struct stat sb;
         if (lstat(resolved.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)) {
+#ifndef HORIZON
             if (symlinkCount++ > MAXSYMLINKS) {
                 errno = ELOOP;
                 return false;
             }
+#endif
 
             std::string symlink;
             if (!readlink(resolved.c_str(), symlink)) {

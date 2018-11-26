@@ -19,14 +19,14 @@
 jboolean rvmInitMonitors(Env* env);
 Monitor* rvmCreateMonitor(Env* env, Object* obj);
 Object* rvmGetMonitorObject(Monitor* mon);
-Thread* rvmGetObjectLockHolder(Env* env, Object* obj);
-jboolean rvmHoldsLock(Env* env, Thread* thread, Object* obj);
+RvmThread* rvmGetObjectLockHolder(Env* env, Object* obj);
+jboolean rvmHoldsLock(Env* env, RvmThread* thread, Object* obj);
 void rvmLockObject(Env* env, Object* obj);
 jboolean rvmUnlockObject(Env* env, Object* obj);
 void rvmObjectWait(Env* env, Object* obj, jlong msec, jint nsec, jboolean interruptShouldThrow);
 void rvmObjectNotify(Env* env, Object* obj);
 void rvmObjectNotifyAll(Env* env, Object* obj);
 void rvmThreadSleep(Env* env, jlong msec, jint nsec);
-void rvmThreadInterrupt(Env* env, Thread* thread);
+void rvmThreadInterrupt(Env* env, RvmThread* thread);
 
 #endif

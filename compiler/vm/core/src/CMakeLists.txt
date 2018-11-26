@@ -40,8 +40,7 @@ if(DARWIN)
   set_property(SOURCE ${OBJC_SRC} PROPERTY LANGUAGE C)
   set_property(SOURCE ${OBJC_SRC} PROPERTY COMPILE_FLAGS ${OBJC_FLAGS})
 elseif(HORIZON)
-  add_definitions(-DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
-  include_directories(/opt/devkitpro/libnx/include)
+  set(SRC ${SRC} horizon/pthread.c horizon/signal.c)
 endif()
 
 # The code in unwind.c doesn't work properly if compiled with tail call optimizations
@@ -52,6 +51,8 @@ add_dependencies(robovm-core extgc)
 
 set_target_properties(robovm-core PROPERTIES SUFFIX "${LIB_SUFFIX}")
 install(TARGETS robovm-core DESTINATION ${INSTALL_DIR})
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -specs=${DEVKITPRO}/libnx/switch.specs -Wl,-no-as-needed")
 
 add_executable(test_call0 test/test_call0.c test/CuTest.c call0-${OS_FAMILY}-${ARCH}.s unwind.c)
 add_library(test_call0_lib STATIC test/test_call0.c test/CuTest.c call0-${OS_FAMILY}-${ARCH}.s unwind.c)
@@ -87,3 +88,7 @@ add_test(testTrycatchEnterLeaveOnce test_trycatch "testTrycatchEnterLeaveOnce")
 add_test(testTrycatchEnterLeaveMultiple test_trycatch "testTrycatchEnterLeaveMultiple")
 add_test(testTrycatchJumpOnce test_trycatch "testTrycatchJumpOnce")
 add_test(testTrycatchJumpNested test_trycatch "testTrycatchJumpNested")
+
+target_link_libraries(test_call0 nx)
+target_link_libraries(test_proxy0 nx)
+target_link_libraries(test_trycatch nx)

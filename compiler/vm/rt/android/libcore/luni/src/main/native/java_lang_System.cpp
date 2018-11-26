@@ -118,8 +118,8 @@ extern "C" jstring Java_java_lang_System_mapLibraryName0(JNIEnv* env, jclass, js
     if (name.c_str() == NULL) {
         return NULL;
     }
-    char* mappedName = NULL;
-    asprintf(&mappedName, OS_SHARED_LIB_FORMAT_STR, name.c_str());
+    char mappedName[512];
+    snprintf(mappedName, sizeof(mappedName), OS_SHARED_LIB_FORMAT_STR, name.c_str());
     jstring result = env->NewStringUTF(mappedName);
     free(mappedName);
     return result;

@@ -187,7 +187,9 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${LD_FLAGS}")
 
 # Assembler flags
 set(ASM_FLAGS "${ASM_FLAGS} -fPIC")
-if(CARCH)
+if(HORIZON)
+  set(ASM_FLAGS "${ASM_FLAGS} -c")
+elseif(CARCH)
   set(ASM_FLAGS "${ASM_FLAGS} -c -arch ${CARCH}")
 elseif(64_BIT)
   set(ASM_FLAGS "${ASM_FLAGS} -c -m64")
@@ -216,7 +218,7 @@ elseif(DARWIN)
   endif()
   add_definitions(-DDARWIN)
 elseif(HORIZON)
-  add_definitions(-DHORIZON -DGC_NO_DLOPEN)
+  add_definitions(-DHORIZON)
 endif()
 
 if (ARCH STREQUAL "x86_64")
@@ -279,12 +281,12 @@ if (IOS)
   endif()
 endif()
 if (HORIZON)
-  set(EXT_PATH "$ENV{PATH}:/opt/devkitpro/devkitA64/bin")
-  set(EXTGC_RANLIB "/opt/devkitpro/devkitA64/bin/aarch64-none-elf-ranlib")
-  set(EXTGC_C_COMPILER "/opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc")
-  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN")
+  set(EXT_PATH "$ENV{PATH}:${DEVKITA64}/bin")
+#  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS")
   set(EXT_HOST --host=aarch64-none-elf)
   set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-munmap=no --enable-parallel-mark=no") # FIXME
+  add_definitions(-DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
+  add_definitions(-D_SYS__PTHREADTYPES_H_ -D_SYS_SIGNAL_H -D_SIGNAL_H_) # FIXME amazingly hacky
 endif()
 ExternalProject_Add(libatomic_ops
   GIT_REPOSITORY https://github.com/ivmai/libatomic_ops.git
@@ -301,7 +303,7 @@ ExternalProject_Add(extgc
   GIT_TAG 91a1b8b326215475d2dae8b2ca0b7c0d917ff438
   UPDATE_COMMAND ""
   PATCH_COMMAND bash -c "rm -rf libatomic_ops && ln -s ../../../libatomic_ops-prefix/src/libatomic_ops libatomic_ops"
-  CONFIGURE_COMMAND bash -xc "./autogen.sh && PATH='${EXT_PATH}' CC=${EXTGC_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' RANLIB='${EXTGC_RANLIB}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
+  CONFIGURE_COMMAND bash -xc "./autogen.sh && PATH='${EXT_PATH}' CC=${EXTGC_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' AR='${CMAKE_AR}' RANLIB='${CMAKE_RANLIB}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
   BUILD_COMMAND bash -xc "export PATH='${EXT_PATH}' make"
   BUILD_IN_SOURCE 1
 )

@@ -41,14 +41,14 @@ sp_offset   = 16
 
 Env_trycatchContext_offset = 56
 
-    .section    __TEXT,__text,regular,pure_instructions
+    .text
     
 /*
  * rvmTrycatchEnter(Env* env, TrycatchContext* tc) 
  */    
-    .globl    _rvmTrycatchEnter
+    .globl    rvmTrycatchEnter
     .align    2
-_rvmTrycatchEnter:
+rvmTrycatchEnter:
 
     mov x9, sp
     stp  x9, x19, [x1, sp_offset + 16 * 0]
@@ -78,9 +78,9 @@ _rvmTrycatchEnter:
 /*
  * rvmTrycatchJump(TrycatchContext* tc) 
  */
-    .globl    _rvmTrycatchJump
+    .globl    rvmTrycatchJump
     .align    2
-_rvmTrycatchJump:
+rvmTrycatchJump:
     ldp  x9, x19, [x0, sp_offset + 16 * 0]
     ldp x20, x21, [x0, sp_offset + 16 * 1]
     ldp x22, x23, [x0, sp_offset + 16 * 2]

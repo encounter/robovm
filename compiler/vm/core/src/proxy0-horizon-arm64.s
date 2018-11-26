@@ -32,11 +32,11 @@ proxy0_stack_size     = (CallInfo_size)
 # On Darwin ARM64 the stack should always be 16 byte aligned when calling a function.
 proxy0_stack_size_aligned = ((((proxy0_stack_size) + 16 - 1) & ~(16 - 1)))
 
-    .section    __TEXT,__text,regular,pure_instructions
+    .text
     
-    .globl    __proxy0
+    .globl    _proxy0
     .align    2
-__proxy0:
+_proxy0:
     stp fp, lr, [sp, #-16]!
     mov fp, sp
 
@@ -61,7 +61,7 @@ __proxy0:
     str x0, [sp, stackArgs_offset]
 
     mov x0, sp
-    bl __rvmProxyHandler
+    bl _rvmProxyHandler
 
     // Return value (if any) is now in x0 (int/long) or in d0 (float/double)
     ldr x0, [sp, returnValue_offset]

@@ -36,7 +36,11 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef HORIZON
+#include "horizon/pthread.h"
+#else
 #include <pthread.h>
+#endif
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -46,11 +50,6 @@
 #include "private.h"
 
 #define LOG_TAG "core.monitor"
-
-typedef uint32_t u4;
-typedef int32_t s4;
-typedef uint64_t u8;
-typedef int64_t s8;
 
 #if defined(RVM_X86_64) || defined(RVM_ARM64)
 # define LW_TYPE uint64_t
@@ -251,7 +250,7 @@ Object* rvmGetMonitorObject(Monitor* mon) {
 /*
  * Returns the thread id of the thread owning the given lock.
  */
-static u4 lockOwner(Object* obj) {
+static uint32_t lockOwner(Object* obj) {
     RvmThread *owner;
     LW_TYPE lock;
 
@@ -276,7 +275,7 @@ static u4 lockOwner(Object* obj) {
  * The caller must lock the thread list before calling here.
  */
 RvmThread* rvmGetObjectLockHolder(Env* env, Object* obj) {
-    u4 threadId = lockOwner(obj);
+    uint32_t threadId = lockOwner(obj);
 
     if (threadId == 0)
         return NULL;
@@ -732,7 +731,7 @@ void rvmLockObject(Env* env, Object* obj) {
     long minSleepDelayNs = 1000000;  /* 1 millisecond */
     long maxSleepDelayNs = 1000000000;  /* 1 second */
     LW_TYPE thin, newThin;
-    u4 threadId;
+    u32 threadId;
 
     assert(self != NULL);
     assert(obj != NULL);

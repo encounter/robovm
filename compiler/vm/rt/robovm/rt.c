@@ -82,7 +82,7 @@ jchar* rvmRTGetStringChars(Env* env, Object* str) {
     return value->values + offset;
 }
 
-void rvmRTInitAttachedThread(Env* env, Object* threadObj, Thread* thread, Object* threadName, Object* group, jboolean daemon) {
+void rvmRTInitAttachedThread(Env* env, Object* threadObj, RvmThread* thread, Object* threadName, Object* group, jboolean daemon) {
     ((JavaThread*) threadObj)->threadPtr = PTR_TO_LONG(thread);
     rvmCallNonvirtualVoidInstanceMethod(env, (Object*) threadObj, method_java_lang_Thread_init(env), PTR_TO_LONG(thread), threadName, group, daemon);
 }
@@ -91,15 +91,15 @@ void rvmRTSetThreadContextClassLoader(Env* env, Object* threadObj, Object* class
     ((JavaThread*) threadObj)->contextClassLoader = classLoader;
 }
 
-Thread* rvmRTGetNativeThread(Env* env, Object* threadObj) {
-    return (Thread*) LONG_TO_PTR(((JavaThread*) threadObj)->threadPtr);
+RvmThread* rvmRTGetNativeThread(Env* env, Object* threadObj) {
+    return (RvmThread*) LONG_TO_PTR(((JavaThread*) threadObj)->threadPtr);
 }
 
 void rvmRTClearNativeThread(Env* env, Object* threadObj) {
     rvmAtomicStoreLong(&((JavaThread*) threadObj)->threadPtr, 0);
 }
 
-void rvmRTSetNativeThread(Env* env, Object* threadObj, Thread* thread) {
+void rvmRTSetNativeThread(Env* env, Object* threadObj, RvmThread* thread) {
     ((JavaThread*) threadObj)->threadPtr = PTR_TO_LONG(thread);
 }
 

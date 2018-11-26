@@ -202,7 +202,7 @@
 # undef  SGTTY
 #endif
 
-#if !defined(TERMIO) && !defined(TERMIOS) && !defined(OPENSSL_SYS_VMS) && !defined(OPENSSL_SYS_MSDOS) && !defined(OPENSSL_SYS_MACINTOSH_CLASSIC) && !defined(MAC_OS_GUSI_SOURCE)
+#if !defined(TERMIO) && !defined(TERMIOS) && !defined(OPENSSL_SYS_VMS) && !defined(OPENSSL_SYS_MSDOS) && !defined(OPENSSL_SYS_MACINTOSH_CLASSIC) && !defined(MAC_OS_GUSI_SOURCE) && !defined(HORIZON)
 # undef  TERMIOS
 # undef  TERMIO
 # define SGTTY
@@ -296,7 +296,7 @@ static long tty_orig[3], tty_new[3]; /* XXX   Is there any guarantee that this w
 static long status;
 static unsigned short channel = 0;
 #else
-#if !defined(OPENSSL_SYS_MSDOS) || defined(__DJGPP__)
+#if !defined(HORIZON) && (!defined(OPENSSL_SYS_MSDOS) || defined(__DJGPP__))
 static TTY_STRUCT tty_orig,tty_new;
 #endif
 #endif

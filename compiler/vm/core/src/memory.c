@@ -422,6 +422,7 @@ static void logGcHeapStats() {
     HeapStatsCallbackData data = {loadedClassesHash, &statsHash};
     GC_rvm_apply_to_each_object(heapStatsCallback, &data);
 
+#ifndef HORIZON
     time_t timestamp;
     struct tm timeinfo;
     time(&timestamp);
@@ -430,6 +431,8 @@ static void logGcHeapStats() {
     strftime(d, sizeof(d), "%F %T", &timeinfo);
 
     fprintf(stderr, "Heap stats before GC at %s:\n", d);
+#endif
+
 
     HASH_SORT(statsHash, sortHeapStatsByNumberOfBytesDesc);
     printHeapStatsHash(stderr, statsHash, "*** Heap objects sorted by size ***", 20);

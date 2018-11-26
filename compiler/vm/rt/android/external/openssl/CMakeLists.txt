@@ -4,11 +4,11 @@ project(android-external-openssl)
 add_definitions(
   -DOPENSSL_THREADS
   -D_REENTRANT
-  -DDSO_DLFCN
-  -DHAVE_DLFCN_H
+#  -DDSO_DLFCN
+#  -DHAVE_DLFCN_H
   -DL_ENDIAN
 #  -DTERMIO # RoboVM note: Not available on Darwin. We enable termios.h use instead.
-  -DTERMIOS # RoboVM note: Enabled instead of TERMIO.
+#  -DTERMIOS # RoboVM note: Enabled instead of TERMIO.
   -DOPENSSL_NO_CAMELLIA
   -DOPENSSL_NO_CAPIENG
   -DOPENSSL_NO_CAST

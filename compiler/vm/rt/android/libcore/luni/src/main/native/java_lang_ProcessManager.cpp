@@ -51,6 +51,7 @@ static void CloseNonStandardFds(int status_pipe_fd) {
     properties_fd = atoi(properties_fd_string);
   }
 
+#ifndef HORIZON
   DIR* d = opendir(fd_path);
   int dir_fd = dirfd(d);
   dirent* e;
@@ -64,6 +65,7 @@ static void CloseNonStandardFds(int status_pipe_fd) {
     }
   }
   closedir(d);
+#endif
 }
 
 #define PIPE_COUNT 4 // Number of pipes used to communicate with child.

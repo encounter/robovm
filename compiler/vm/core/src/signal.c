@@ -16,10 +16,16 @@
 
 #define _GNU_SOURCE
 #include <robovm.h>
+#ifdef HORIZON
+#include "horizon/signal.h"
+#else
 #include <signal.h>
+#endif
 #if defined(DARWIN)
 #   include <mach/mach.h>
 #   include <mach/semaphore.h>
+#elif defined(HORIZON)
+#   include <switch/kernel/semaphore.h>
 #else
 #   include <semaphore.h>
 #endif
@@ -50,9 +56,11 @@ static inline int sem_post(sem_t* sem) {
 #define BLOCKED_THREAD_SIGNAL (SIGRTMIN + 2)
 #endif
 
+#ifndef HORIZON
 typedef struct {
     struct sigaction blockedThreadSignal;
 } SavedSignals;
+#endif
 
 /*
  * The common way to implement stack overflow detection is to catch SIGSEGV and see if the
@@ -68,6 +76,7 @@ typedef struct {
 
 static Method* throwableInitMethod = NULL;
 static CallStack* dumpThreadStackTraceCallStack = NULL;
+#ifndef HORIZON
 static sem_t dumpThreadStackTraceCallSemaphore;
 #if defined(DARWIN)
 static struct sigaction sigbusFallback;
@@ -77,6 +86,7 @@ static struct sigaction sigsegvFallback;
 static void signalHandler_npe_so_nochaining(int signum, siginfo_t* info, void* context);
 static void signalHandler_npe_so_chaining(int signum, siginfo_t* info, void* context);
 static void signalHandler_dump_thread(int signum, siginfo_t* info, void* context);
+#endif
 static jboolean installNoChainingSignals(Env* env);
 
 #if defined(DARWIN)
@@ -90,9 +100,11 @@ void registerDarwinExceptionHandler(void) {
 jboolean rvmInitSignals(Env* env) {
     throwableInitMethod = rvmGetClassMethod(env, java_lang_Throwable, "init", "(Ljava/lang/Throwable;J)V");
     if (!throwableInitMethod) return FALSE;
+#ifndef HORIZON
     if (sem_init(&dumpThreadStackTraceCallSemaphore, 0, 0) != 0) {
         return FALSE;
     }
+#endif
     if (!installNoChainingSignals(env)) {
         return FALSE;
     }
@@ -102,6 +114,7 @@ jboolean rvmInitSignals(Env* env) {
     return TRUE;
 }
 
+#ifndef HORIZON
 static struct sigaction create_sigaction(void (*f)(int, siginfo_t*, void*)) {
     struct sigaction sa;
     sigemptyset(&sa.sa_mask);
@@ -124,6 +137,7 @@ static int installSignalHandlerIfNeeded(int signum, struct sigaction sa, struct 
     }
     return 0;
 }
+#endif
 
 static jboolean installChainingSignals(Env* env) {
 #if defined(DARWIN)
@@ -134,6 +148,7 @@ static jboolean installChainingSignals(Env* env) {
     }
 #endif
 
+#ifndef HORIZON
     if (installSignalHandlerIfNeeded(SIGSEGV, create_sigaction(&signalHandler_npe_so_chaining), &sigsegvFallback) != 0) {
         rvmThrowInternalErrorErrno(env, errno);
         return FALSE;
@@ -143,10 +158,12 @@ static jboolean installChainingSignals(Env* env) {
         rvmThrowInternalErrorErrno(env, errno);
         return FALSE;
     }
+#endif
 
     return TRUE;
 }
 
+#ifndef HORIZON
 static jboolean reinstallSavedSignals(Env* env, SavedSignals* savedSignals) {
     if (installSignalHandlerIfNeeded(DUMP_THREAD_STACK_TRACE_SIGNAL, create_sigaction(&signalHandler_dump_thread), NULL) != 0) {
         rvmThrowInternalErrorErrno(env, errno);
@@ -160,6 +177,7 @@ static jboolean reinstallSavedSignals(Env* env, SavedSignals* savedSignals) {
 
     return TRUE;
 }
+#endif
 
 static jboolean installNoChainingSignals(Env* env) {
 #if defined(DARWIN)
@@ -170,6 +188,7 @@ static jboolean installNoChainingSignals(Env* env) {
     }
 #endif
 
+#ifndef HORIZON
     if (installSignalHandlerIfNeeded(SIGSEGV, create_sigaction(&signalHandler_npe_so_nochaining), NULL) != 0) {
         rvmThrowInternalErrorErrno(env, errno);
         return FALSE;
@@ -179,21 +198,28 @@ static jboolean installNoChainingSignals(Env* env) {
         rvmThrowInternalErrorErrno(env, errno);
         return FALSE;
     }
+#endif
 
     return TRUE;
 }
 
 jboolean rvmInstallThreadSignalMask(Env* env) {
     int err;
+#ifndef HORIZON
     if ((err = pthread_sigmask(0, NULL, &env->currentThread->signalMask)) != 0) {
         rvmThrowInternalErrorErrno(env, err);
         return FALSE;        
     }
+#endif
     return TRUE;
 }
 
 jboolean rvmRestoreThreadSignalMask(Env* env) {
+#ifdef HORIZON
+    return TRUE;
+#else
     return pthread_sigmask(SIG_SETMASK, &env->currentThread->signalMask, NULL) == 0 ? TRUE : FALSE;
+#endif
 }
 
 jboolean rvmInstallChainingSignals(Env* env) {
@@ -208,19 +234,27 @@ jboolean rvmInstallChainingSignals(Env* env) {
 }
 
 jboolean rvmReinstallSavedSignals(Env* env, void* state) {
+#ifdef HORIZON
+    return TRUE;
+#else
     SavedSignals* savedSignals = (SavedSignals*) state;
     jboolean r = reinstallSavedSignals(env, savedSignals);
     free(savedSignals);
     return r;
+#endif
 }
 
 void* rvmSaveSignals(Env* env) {
+#ifdef HORIZON
+    return NULL;
+#else
     SavedSignals* state = malloc(sizeof(SavedSignals));
     if (!state) {
         rvmThrowOutOfMemoryError(env);
         return NULL;
     }
     return state;
+#endif
 }
 
 void dumpThreadStackTrace(Env* env, RvmThread* thread, CallStack* callStack) {
@@ -228,6 +262,7 @@ void dumpThreadStackTrace(Env* env, RvmThread* thread, CallStack* callStack) {
     // variables to transfer data to/from a signal handler.
 
     rvmAtomicStorePtr((void**) &dumpThreadStackTraceCallStack, callStack);
+#ifndef HORIZON
     if (pthread_kill(thread->pThread, DUMP_THREAD_STACK_TRACE_SIGNAL) != 0) {
         // The thread is probably not alive
         return;
@@ -235,8 +270,10 @@ void dumpThreadStackTrace(Env* env, RvmThread* thread, CallStack* callStack) {
 
     while (sem_wait(&dumpThreadStackTraceCallSemaphore) == EINTR) {
     }
+#endif
 }
 
+#ifndef HORIZON
 static inline void* getFramePointer(ucontext_t* context) {
 #if defined(DARWIN)
 #   if defined(RVM_X86)
@@ -380,3 +417,4 @@ static void signalHandler_dump_thread(int signum, siginfo_t* info, void* context
     }
     sem_post(&dumpThreadStackTraceCallSemaphore);
 }
+#endif

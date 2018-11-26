@@ -17,6 +17,10 @@
 #include <string.h>
 #include "CuTest.h"
 
+#ifdef HORIZON
+#include <switch.h>
+#endif
+
 int main(int argc, char* argv[]) __attribute__ ((weak));
 
 void testTrycatchEnterLeaveOnce(CuTest* tc) {
@@ -133,5 +137,19 @@ int runTests(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-    return runTests(argc, argv);
+#ifdef HORIZON
+    consoleInit(NULL);
+    printf("Starting test_trycatch\n");
+#endif
+    int ret = runTests(argc, argv);
+#ifdef HORIZON
+    u64 kdown;
+    while (appletMainLoop()) {
+        hidScanInput();
+        kdown = hidKeysDown(CONTROLLER_P1_AUTO);
+        if (kdown & KEY_PLUS)
+            break;
+    }
+#endif
+    return ret;
 }

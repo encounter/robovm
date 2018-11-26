@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 #define _GNU_SOURCE
+#ifdef HORIZON
+#include "horizon/pthread.h"
+#else
 #include <pthread.h>
+#endif
 #include <robovm.h>
 #if defined(DARWIN)
 # include <mach/mach.h>
@@ -32,9 +36,9 @@
 
 // GC descriptor specifying which words in a Thread that should be scanned 
 // for heap pointers.
-#define THREAD_GC_BITMAP (MAKE_GC_BITMAP(offsetof(Thread, threadObj)) \
-                         |MAKE_GC_BITMAP(offsetof(Thread, waitMonitor)) \
-                         |MAKE_GC_BITMAP(offsetof(Thread, next)))
+#define THREAD_GC_BITMAP (MAKE_GC_BITMAP(offsetof(RvmThread, threadObj)) \
+                         |MAKE_GC_BITMAP(offsetof(RvmThread, waitMonitor)) \
+                         |MAKE_GC_BITMAP(offsetof(RvmThread, next)))
 
 // Maximum thread id, 32767 (1 << 15 - 1), as Thread.threadId is a signed jint
 #define MAX_THREAD_ID ((1 << 15) - 1)
@@ -201,7 +205,7 @@ static void* getStackAddress(void) {
 }
 
 static RvmThread* allocThread(Env* env) {
-    RvmThread* thread = (Thread*) allocateMemoryOfKind(env, sizeof(Thread), threadGCKind);
+    RvmThread* thread = (RvmThread*) allocateMemoryOfKind(env, sizeof(RvmThread), threadGCKind);
     if (!thread) return NULL;
     thread->status = THREAD_INITIALIZING;
     return thread;
@@ -294,7 +298,7 @@ static jint attachThread(VM* vm, Env** envPtr, char* name, Object* group, jboole
     if (!env) {
         // If the thread was already attached there's an Env* and a RvmThread* associated with the thread.
         env = (Env*) pthread_getspecific(tlsEnvKey);
-        RvmThread* thread = (Thread*) pthread_getspecific(tlsThreadKey);
+        RvmThread* thread = (RvmThread*) pthread_getspecific(tlsThreadKey);
         if (env && thread) {
             env->attachCount++;
             *envPtr = env;
@@ -691,7 +695,7 @@ jboolean rvmHasCurrentThread(Env* env) {
     return TRUE;
 }
 
-Thread* rvmGetThreadByThreadId(Env* env, uint32_t threadId) {
+RvmThread* rvmGetThreadByThreadId(Env* env, uint32_t threadId) {
     rvmLockThreadsList();
     RvmThread* result = NULL;
     RvmThread* thread = NULL;

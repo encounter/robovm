@@ -1,5 +1,7 @@
 project(rt)
 
+include_directories(../core/include/horizon)
+
 add_subdirectory(robovm)
 add_subdirectory(android)
 

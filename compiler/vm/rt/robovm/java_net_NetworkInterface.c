@@ -20,7 +20,9 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#ifndef HORIZON
 #include <ifaddrs.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -72,6 +74,7 @@ static jboolean ioctl_ifreq(Env* env, Object* interfaceName, struct ifreq* ifreq
 
 }
 
+#ifndef HORIZON
 static jboolean iterateAddrInfo(Env* env, const char* interfaceName, jboolean (*f)(Env*, struct ifaddrs *, void*), void* data) {
     struct ifaddrs *ap, *apit;
     if (getifaddrs(&ap) < 0) {
@@ -90,6 +93,7 @@ static jboolean iterateAddrInfo(Env* env, const char* interfaceName, jboolean (*
     freeifaddrs(ap);
     return TRUE;
 }
+#endif
 
 ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* cls) {
     if (!java_lang_String_array) {
@@ -99,22 +103,25 @@ ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* c
         }
     }
 
+    jint count = 0;
+#ifndef HORIZON
     struct if_nameindex* ifs = if_nameindex();
     if (!ifs) {
         // Assume out of memory
         rvmThrowOutOfMemoryError(env);
         return NULL;
     }
-    jint count = 0;
     while (ifs[count].if_index > 0) {
         count++;
     }
+#endif
 
     ObjectArray* result = rvmNewObjectArray(env, count, NULL, java_lang_String_array, NULL);
     if (!result) {
         goto done;
     }
 
+#ifndef HORIZON
     jint i = 0;
     for (i = 0; i < count; i++) {
         Object* name = rvmNewStringUTF(env, ifs[i].if_name, -1);
@@ -123,9 +130,12 @@ ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* c
         }
         result->values[i] = name;
     }
+#endif
 
 done:
+#ifndef HORIZON
     if_freenameindex(ifs);
+#endif
     return result;
 }
 
@@ -134,7 +144,11 @@ jint Java_java_net_NetworkInterface_getInterfaceIndex(Env* env, Class* cls, Obje
     if (!name) {
         return 0;
     }
+#ifdef HORIZON
+    return -1;
+#else
     return if_nametoindex(name);
+#endif
 }
 
 jint Java_java_net_NetworkInterface_getFlags(Env* env, Class* cls, Object* interfaceName) {
@@ -179,7 +193,7 @@ ByteArray* Java_java_net_NetworkInterface_getHardwareAddress(Env* env, Class* cl
 #if defined(DARWIN)
     // Darwin doesn't have SIOCGIFHWADDR so we need to use getifaddrs() instead.
     iterateAddrInfo(env, name, getHardwareAddressIterator, &result);
-#else
+#elif !defined(HORIZON)
     struct ifreq ifreq;
     if (!ioctl_ifreq(env, interfaceName, &ifreq, SIOCGIFHWADDR)) {
         return NULL;
@@ -195,6 +209,7 @@ ByteArray* Java_java_net_NetworkInterface_getHardwareAddress(Env* env, Class* cl
 }
 
 
+#ifndef HORIZON
 static jboolean countIpv6AddressesIterator(Env* env, struct ifaddrs *ia, void* data) {
     jint* count = (jint*) data;
     if (ia->ifa_addr && ia->ifa_addr->sa_family == AF_INET6) {
@@ -219,11 +234,15 @@ static jboolean getIpv6AddressesIterator(Env* env, struct ifaddrs *ia, void* _da
     }
     return TRUE; // Continue iteration
 }
+#endif
 ByteArray* Java_java_net_NetworkInterface_getIpv6Addresses(Env* env, Class* cls, Object* interfaceName) {
     const char* name = rvmGetStringUTFChars(env, interfaceName);
     if (!name) {
         return NULL;
     }
+#ifdef HORIZON
+    return NULL;
+#else
     jint count = 0;
     if (!iterateAddrInfo(env, name, countIpv6AddressesIterator, &count)) {
         return NULL;
@@ -243,9 +262,11 @@ ByteArray* Java_java_net_NetworkInterface_getIpv6Addresses(Env* env, Class* cls,
         return NULL;
     }
     return result;
+#endif
 }
 
 #define IPV4_BYTES 4
+#ifndef HORIZON
 static jboolean countIpv4AddressesIterator(Env* env, struct ifaddrs *ia, void* data) {
     jint* count = (jint*) data;
     if (ia->ifa_addr && ia->ifa_addr->sa_family == AF_INET) {
@@ -274,11 +295,15 @@ static jboolean getIpv4AddressesIterator(Env* env, struct ifaddrs *ia, void* _da
     }
     return TRUE; // Continue iteration
 }
+#endif
 ByteArray* Java_java_net_NetworkInterface_getIpv4Addresses(Env* env, Class* cls, Object* interfaceName) {
     const char* name = rvmGetStringUTFChars(env, interfaceName);
     if (!name) {
         return NULL;
     }
+#ifdef HORIZON
+    return NULL;
+#else
     jint count = 0;
     if (!iterateAddrInfo(env, name, countIpv4AddressesIterator, &count)) {
         return NULL;
@@ -298,4 +323,5 @@ ByteArray* Java_java_net_NetworkInterface_getIpv4Addresses(Env* env, Class* cls,
         return NULL;
     }
     return result;
+#endif
 }

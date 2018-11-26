@@ -53,7 +53,7 @@ uspoof_cleanup(void) {
 }
 
 static void initializeStatics() {
-    Mutex m(&gInitMutex);
+    icu_51::Mutex m(&gInitMutex);
     UErrorCode status = U_ZERO_ERROR;
     if (gInclusionSet == NULL) {
         gInclusionSet = new UnicodeSet(UNICODE_STRING_SIMPLE("[\

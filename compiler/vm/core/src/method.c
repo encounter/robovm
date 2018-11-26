@@ -257,7 +257,7 @@ CallStack* rvmCaptureCallStack(Env* env) {
     return captureCallStackFromFrame(env, NULL);
 }
 
-CallStack* rvmCaptureCallStackForThread(Env* env, Thread* thread) {
+CallStack* rvmCaptureCallStackForThread(Env* env, RvmThread* thread) {
     if (thread == env->currentThread) {
         return rvmCaptureCallStack(env);
     }

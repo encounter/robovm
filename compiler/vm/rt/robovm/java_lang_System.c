@@ -20,7 +20,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <pwd.h>
+#ifndef HORIZON
 #include <sys/utsname.h>
+#endif
 #include <string.h>
 
 #if defined(DARWIN)

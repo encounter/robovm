@@ -26,11 +26,11 @@ returnType_offset     = 176 // jint
 //padding             = 180 // jint
 CallInfo_size         = 184
 
-    .section    __TEXT,__text,regular,pure_instructions
+    .text
     
-    .globl    __call0
+    .globl    _call0
     .align    2
-__call0:
+_call0:
     stp fp, lr, [sp, #-16]!
     mov fp, sp
     str x19, [sp, #-16]!
@@ -46,7 +46,7 @@ __call0:
     sub sp, sp, x2
     mov x0, sp
     ldr x1, [x19, stackArgs_offset]
-    bl _memcpy
+    bl memcpy
 LsetStackArgsDone:
 
     ldp x0, x1, [x19, intArgs_offset + 16 * 0] // x0 = ((CallInfo*) x19)->intArgs[0], x1 = ((CallInfo*) x19)->intArgs[1]

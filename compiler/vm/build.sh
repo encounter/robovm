@@ -110,14 +110,15 @@ for T in $TARGETS; do
   OS=${T%%-*}
   ARCH=${T#*-}
   if [ "$OS" == "switch" ]; then
-    CC=/opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc
-    CXX=/opt/devkitpro/devkitA64/bin/aarch64-none-elf-g++
+    CMAKE_OPTS="-DCMAKE_TOOLCHAIN_FILE='$BASE/cmake/devkitarm-toolchain.cmake'"
+  else
+    CMAKE_OPTS="-DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
   fi
   for B in $BUILDS; do
     BUILD_TYPE=$B
     mkdir -p "$BASE/target/build/$T-$B"
     rm -rf "$BASE/binaries/$OS/$ARCH/$B"
-    bash -c "cd '$BASE/target/build/$T-$B'; cmake -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make $VERBOSE install"
+    bash -xc "cd '$BASE/target/build/$T-$B'; cmake $CMAKE_OPTS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make $VERBOSE install"
     R=$?
     if [[ $R != 0 ]]; then
       echo "$T-$B build failed"

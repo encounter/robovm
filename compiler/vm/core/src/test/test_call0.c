@@ -18,6 +18,10 @@
 #include "../private.h"
 #include "CuTest.h"
 
+#ifdef HORIZON
+#include <switch.h>
+#endif
+
 int main(int argc, char* argv[]) __attribute__ ((weak));
 int runTests(int argc, char* argv[]);
 
@@ -381,6 +385,54 @@ static void testCall0StackAlignment2(CuTest* tc) {
     void* result = f(ci);
     CuAssertTrue(tc, (((ptrdiff_t) result) & 0xf) == 0);
 }
+#elif defined(RVM_ARM64) && defined(HORIZON)
+/*
+ * Copying Darwin ARM64 semantics for now.
+ */
+asm("stackPointer:    \n\
+        mov x0, sp     \n\
+        ret            \n\
+");
+void* stackPointer(void);
+static void testCall0StackAlignment1(CuTest* tc) {
+    // The first 8 ptr/int values are passed in registers. We need to push
+    // at least 9 ptrs to start using the stack.
+    CallInfo* ci = CALL0_ALLOCATE_CALL_INFO(NULL, stackPointer, 9, 0, 0, 0, 0);
+    CuAssertPtrNotNull(tc, ci);
+    call0AddPtr(ci, (void*) 1);
+    call0AddPtr(ci, (void*) 2);
+    call0AddPtr(ci, (void*) 3);
+    call0AddPtr(ci, (void*) 4);
+    call0AddPtr(ci, (void*) 5);
+    call0AddPtr(ci, (void*) 6);
+    call0AddPtr(ci, (void*) 7);
+    call0AddPtr(ci, (void*) 8);
+    call0AddPtr(ci, (void*) 9);
+
+    void* (*f)(CallInfo*) = (void* (*)(CallInfo*)) _call0;
+    void* result = f(ci);
+    CuAssertTrue(tc, (((ptrdiff_t) result) & 0xf) == 0);
+}
+static void testCall0StackAlignment2(CuTest* tc) {
+    // The first 8 ptr/int values are passed in registers. We need to push
+    // at least 9 ptrs to start using the stack.
+    CallInfo* ci = CALL0_ALLOCATE_CALL_INFO(NULL, stackPointer, 10, 0, 0, 0, 0);
+    CuAssertPtrNotNull(tc, ci);
+    call0AddPtr(ci, (void*) 1);
+    call0AddPtr(ci, (void*) 2);
+    call0AddPtr(ci, (void*) 3);
+    call0AddPtr(ci, (void*) 4);
+    call0AddPtr(ci, (void*) 5);
+    call0AddPtr(ci, (void*) 6);
+    call0AddPtr(ci, (void*) 7);
+    call0AddPtr(ci, (void*) 8);
+    call0AddPtr(ci, (void*) 9);
+    call0AddPtr(ci, (void*) 10);
+
+    void* (*f)(CallInfo*) = (void* (*)(CallInfo*)) _call0;
+    void* result = f(ci);
+    CuAssertTrue(tc, (((ptrdiff_t) result) & 0xf) == 0);
+}
 #else
 #error No stack alignment tests for this platform!
 #endif
@@ -471,5 +523,19 @@ int runTests(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-    return runTests(argc, argv);
+#ifdef HORIZON
+    consoleInit(NULL);
+    printf("Starting test_call0\n");
+#endif
+    int ret = runTests(argc, argv);
+#ifdef HORIZON
+    u64 kdown;
+    while (appletMainLoop()) {
+        hidScanInput();
+        kdown = hidKeysDown(CONTROLLER_P1_AUTO);
+        if (kdown & KEY_PLUS)
+            break;
+    }
+#endif
+    return ret;
 }
