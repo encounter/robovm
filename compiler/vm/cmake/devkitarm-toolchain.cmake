@@ -38,7 +38,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -MMD -MP") # -MF
 # nx flags
 add_definitions(-D__SWITCH__)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions") # -fno-rtti
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS}") # -fno-exceptions -fno-rtti
 
 # libnx
 include_directories("$ENV{DEVKITPRO}/libnx/include")
@@ -55,13 +55,22 @@ function(add_nx_target)
 	add_executable("${_NX_TARGET_NAME}.elf" ${_NX_TARGET_SOURCES})
 	target_link_libraries("${_NX_TARGET_NAME}.elf" nx ${_NX_TARGET_LIBRARIES})
 	set_target_properties("${_NX_TARGET_NAME}.elf" PROPERTIES
-			COMPILE_FLAGS "-MF ${_NX_TARGET_NAME}.d"
+			#COMPILE_FLAGS "-MF ${_NX_TARGET_NAME}.d"
 			LINK_FLAGS "-specs=${DEVKITPRO}/libnx/switch.specs -Wl,-no-as-needed -Wl,-Map,${_NX_TARGET_NAME}.map")
-	add_custom_command(OUTPUT build-${_NX_TARGET_NAME}.nso
+
+	add_custom_target("${_NX_TARGET_NAME}.nso" ALL
+			BYPRODUCTS "${_NX_TARGET_NAME}.nso"
 			COMMAND "${DEVKITPRO}/tools/bin/elf2nso"
 			"${CMAKE_CURRENT_BINARY_DIR}/${_NX_TARGET_NAME}.elf"
 			"${CMAKE_CURRENT_BINARY_DIR}/${_NX_TARGET_NAME}.nso"
-			DEPENDS "${_NX_TARGET_NAME}.elf"
 			COMMENT "Generating NSO")
-	add_custom_target(${_NX_TARGET_NAME}.nso DEPENDS build-${_NX_TARGET_NAME}.nso)
+	add_dependencies("${_NX_TARGET_NAME}.nso" "${_NX_TARGET_NAME}.elf")
+
+	add_custom_target("${_NX_TARGET_NAME}.nro" ALL
+			BYPRODUCTS "${_NX_TARGET_NAME}.nro"
+			COMMAND "${DEVKITPRO}/tools/bin/elf2nro"
+			"${CMAKE_CURRENT_BINARY_DIR}/${_NX_TARGET_NAME}.elf"
+			"${CMAKE_CURRENT_BINARY_DIR}/${_NX_TARGET_NAME}.nro"
+			COMMENT "Generating NRO")
+	add_dependencies("${_NX_TARGET_NAME}.nro" "${_NX_TARGET_NAME}.elf")
 endfunction()

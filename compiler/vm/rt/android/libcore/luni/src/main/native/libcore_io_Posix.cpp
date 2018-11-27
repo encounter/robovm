@@ -567,8 +567,8 @@ extern "C" jint Java_libcore_io_Posix_fcntlFlock(JNIEnv* env, jobject, jobject j
     static jfieldID lenFid = env->GetFieldID(JniConstants::structFlockClass, "l_len", "J");
     static jfieldID pidFid = env->GetFieldID(JniConstants::structFlockClass, "l_pid", "I");
 #ifdef HORIZON
-    return 0;
-#else
+#define flock64 flock
+#endif
     struct flock64 lock;
     memset(&lock, 0, sizeof(lock));
     lock.l_type = env->GetShortField(javaFlock, typeFid);
@@ -587,7 +587,6 @@ extern "C" jint Java_libcore_io_Posix_fcntlFlock(JNIEnv* env, jobject, jobject j
         env->SetIntField(javaFlock, pidFid, lock.l_pid);
     }
     return rc;
-#endif
 }
 
 extern "C" void Java_libcore_io_Posix_fdatasync(JNIEnv* env, jobject, jobject javaFd) {
@@ -993,16 +992,11 @@ extern "C" void Java_libcore_io_Posix_mkdir(JNIEnv* env, jobject, jstring javaPa
 }
 
 extern "C" void Java_libcore_io_Posix_mlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
-#ifndef HORIZON
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "mlock", TEMP_FAILURE_RETRY(mlock(ptr, byteCount)));
-#endif
 }
 
 extern "C" jlong Java_libcore_io_Posix_mmap(JNIEnv* env, jobject, jlong address, jlong byteCount, jint prot, jint flags, jobject javaFd, jlong offset) {
-#ifdef HORIZON
-    return 0;
-#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     void* suggestedPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     void* ptr = mmap(suggestedPtr, byteCount, prot, flags, fd, offset);
@@ -1010,28 +1004,21 @@ extern "C" jlong Java_libcore_io_Posix_mmap(JNIEnv* env, jobject, jlong address,
         throwErrnoException(env, "mmap");
     }
     return static_cast<jlong>(reinterpret_cast<uintptr_t>(ptr));
-#endif
 }
 
 extern "C" void Java_libcore_io_Posix_msync(JNIEnv* env, jobject, jlong address, jlong byteCount, jint flags) {
-#ifndef HORIZON
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "msync", TEMP_FAILURE_RETRY(msync(ptr, byteCount, flags)));
-#endif
 }
 
 extern "C" void Java_libcore_io_Posix_munlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
-#ifndef HORIZON
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munlock", TEMP_FAILURE_RETRY(munlock(ptr, byteCount)));
-#endif
 }
 
 extern "C" void Java_libcore_io_Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
-#ifndef HORIZON
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
-#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {

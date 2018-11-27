@@ -16,16 +16,10 @@
 
 #define _GNU_SOURCE
 #include <robovm.h>
-#ifdef HORIZON
-#include "horizon/signal.h"
-#else
 #include <signal.h>
-#endif
 #if defined(DARWIN)
 #   include <mach/mach.h>
 #   include <mach/semaphore.h>
-#elif defined(HORIZON)
-#   include <switch/kernel/semaphore.h>
 #else
 #   include <semaphore.h>
 #endif
@@ -56,11 +50,9 @@ static inline int sem_post(sem_t* sem) {
 #define BLOCKED_THREAD_SIGNAL (SIGRTMIN + 2)
 #endif
 
-#ifndef HORIZON
 typedef struct {
     struct sigaction blockedThreadSignal;
 } SavedSignals;
-#endif
 
 /*
  * The common way to implement stack overflow detection is to catch SIGSEGV and see if the

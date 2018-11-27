@@ -286,7 +286,8 @@ if (HORIZON)
   set(EXT_HOST --host=aarch64-none-elf)
   set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-munmap=no --enable-parallel-mark=no") # FIXME
   add_definitions(-DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
-  add_definitions(-D_SYS__PTHREADTYPES_H_ -D_SYS_SIGNAL_H -D_SIGNAL_H_) # FIXME amazingly hacky
+  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/core/include/horizon")
+#  add_definitions(-D_SYS__PTHREADTYPES_H_ -D_SYS_SIGNAL_H -D_SIGNAL_H_) # FIXME amazingly hacky
 endif()
 ExternalProject_Add(libatomic_ops
   GIT_REPOSITORY https://github.com/ivmai/libatomic_ops.git

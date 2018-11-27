@@ -22,12 +22,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
-#ifdef HORIZON
-#include "horizon/signal.h"
-#else
 #include <dlfcn.h>
 #include <signal.h>
-#endif
 #if defined(IOS) && (defined(RVM_ARMV7) || defined(RVM_THUMBV7))
 #   include <fenv.h>
 #endif
@@ -557,7 +553,6 @@ void rvmAbort(char* format, ...) {
 DynamicLib* rvmOpenDynamicLib(Env* env, const char* file, char** errorMsg) {
     DynamicLib* dlib = NULL;
 
-#ifndef HORIZON
     *errorMsg = NULL;
     void* handle = dlopen(file, RTLD_LOCAL | RTLD_LAZY);
     if (!handle) {
@@ -582,16 +577,13 @@ DynamicLib* rvmOpenDynamicLib(Env* env, const char* file, char** errorMsg) {
     } else {
         strncpy(dlib->path, env->vm->options->imagePath, sizeof(dlib->path) - 1);
     }
-#endif
 
     return dlib;
 }
 
 void rvmCloseDynamicLib(Env* env, DynamicLib* lib) {
-#ifndef HORIZON
     dlclose(lib->handle);
     rvmFreeMemoryUncollectable(env, lib);
-#endif
 }
 
 jboolean rvmHasDynamicLib(Env* env, DynamicLib* lib, DynamicLib* libs) {
@@ -611,14 +603,12 @@ void rvmAddDynamicLib(Env* env, DynamicLib* lib, DynamicLib** libs) {
 void* rvmFindDynamicLibSymbol(Env* env, DynamicLib* libs, const char* symbol, jboolean searchAll) {
     TRACEF("Searching for symbol '%s'", symbol);
 
-#ifndef HORIZON
     DynamicLib* dlib = NULL;
     LL_FOREACH(libs, dlib) {
         void* v = dlsym(dlib->handle, symbol);
         if (v) return v;
         if (!searchAll) return NULL;
     }
-#endif
     return NULL;
 }
 

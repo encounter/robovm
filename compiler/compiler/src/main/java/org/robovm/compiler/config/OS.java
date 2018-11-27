@@ -23,9 +23,12 @@ import org.robovm.llvm.Target;
  *
  */
 public enum OS {
-    linux("linux", "linux"), macosx("macosx10.9.0", "10.9"), ios("ios7.0.0", "7.0");
+    linux("linux", "linux"),
+    macosx("macosx10.9.0", "10.9"),
+    ios("ios7.0.0", "7.0"),
+    horizon("", "horizon");
     
-    public enum Family {linux, darwin}
+    public enum Family {linux, darwin, horizon}
 
     private final String llvmName;
     private final String minVersion;

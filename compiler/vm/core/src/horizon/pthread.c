@@ -2,12 +2,99 @@
 #include <malloc.h>
 #include <string.h>
 
+#include <switch/result.h>
+#include <switch/types.h>
+#include <switch/arm/tls.h>
+#include <switch/kernel/condvar.h>
+#include <switch/kernel/mutex.h>
 #include <switch/kernel/svc.h>
+#include <switch/kernel/thread.h>
 #include <switch/kernel/virtmem.h>
 
 #include "horizon/pthread.h"
 
+#define ATTR_MAGIC 0x21545625
+#define PTHREAD_KEYS_MAX 32
+#define PTHREAD_MUTEX_RECURSIVE 1
+
+typedef struct {
+    /* Sequence numbers.  Even numbers indicate vacant entries.  Note
+       that zero is even.  We use uintptr_t to not require padding.  */
+    uintptr_t seq;
+
+    void (*destr)(void *);
+} pthread_key_struct;
+
 static pthread_key_struct __pthread_keys[PTHREAD_KEYS_MAX] = {};
+
+typedef CondVar pthread_cond_t;
+
+struct pthread {
+    Thread thr;
+    int rc;
+
+    struct pthread_key_data {
+        uintptr_t seq;
+        void *data;
+    } specific[PTHREAD_KEYS_MAX];
+};
+
+struct pthread_mutex {
+    int type;
+    union {
+        Mutex mutex;
+        RMutex rmutex;
+    };
+};
+
+struct pthread_attr {
+    int is_initialized;
+    void *stackaddr;
+    size_t stacksize;
+    struct sched_param schedparam;
+    int detachstate;
+};
+
+struct pthread_mutexattr {
+    int is_initialized;
+    int type;
+};
+
+struct pthread_condattr {
+    int is_initialized;
+};
+
+#define THREADVARS_MAGIC 0x21545624 // !TV$
+
+// FIXME need to keep in sync with nx/source/internal.h
+typedef struct {
+    // Magic value used to check if the struct is initialized
+    u32 magic;
+
+    // Thread handle, for mutexes
+    Handle handle;
+
+    // Pointer to the current thread (if exists)
+    Thread *thread_ptr;
+
+    // Pointer to this thread's newlib state
+    struct _reent *reent;
+
+    // Pointer to this thread's thread-local segment
+    void *tls_tp; // !! Offset needs to be TLS+0x1F8 for __aarch64_read_tp !!
+} ThreadVars;
+
+static inline ThreadVars *getThreadVars(void) {
+    return (ThreadVars *) ((u8 *) armGetTls() + 0x1E0);
+}
+
+pthread_t pthread_self(void) {
+    ThreadVars *vars = getThreadVars();
+    Thread *t = vars->magic == THREADVARS_MAGIC ? vars->thread_ptr : NULL;
+    // We assume pthread_t is a struct whose first entry is Thread
+    // So we can cast it back to get our info
+    return t ? (pthread_t) t : THRD_MAIN_HANDLE;
+}
 
 typedef struct {
     thrd_start_t func;
@@ -26,9 +113,10 @@ int pthread_cond_init(pthread_cond_t *cond, __unused const pthread_condattr_t *a
 }
 
 static int __cond_wait(pthread_cond_t *__restrict cond,
-                       pthread_mutex_t *__restrict mtx,
+                       pthread_mutex_t *__restrict mutex,
                        uint64_t timeout) {
-    if (!cond || !mtx) return EINVAL;
+    if (!cond || !mutex) return EINVAL;
+    struct pthread_mutex *mtx = *(struct pthread_mutex **) mutex;
 
     uint32_t thread_tag_backup = 0;
     if (mtx->type & PTHREAD_MUTEX_RECURSIVE) {
@@ -71,10 +159,12 @@ int pthread_cond_signal(pthread_cond_t *cond) {
     return R_SUCCEEDED(rc) ? 0 : EINVAL;
 }
 
-int pthread_mutex_init(pthread_mutex_t *mtx, const pthread_mutexattr_t *attr) {
-    if (!mtx || !attr || !attr->is_initialized) return EINVAL;
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
+    if (!mutex || !attr || !attr->is_initialized) return EINVAL;
+    struct pthread_mutex *mtx = *(struct pthread_mutex **) mutex;
 
-    mtx->type = attr->type;
+    mtx->type = 0;
+    if (attr->recursive) mtx->type |= PTHREAD_MUTEX_RECURSIVE;
     if (mtx->type & PTHREAD_MUTEX_RECURSIVE) {
         rmutexInit(&mtx->rmutex);
     } else {
@@ -83,8 +173,9 @@ int pthread_mutex_init(pthread_mutex_t *mtx, const pthread_mutexattr_t *attr) {
     return 0;
 }
 
-int pthread_mutex_lock(pthread_mutex_t *mtx) {
-    if (!mtx) return EINVAL;
+int pthread_mutex_lock(pthread_mutex_t *mutex) {
+    if (!mutex) return EINVAL;
+    struct pthread_mutex *mtx = *(struct pthread_mutex **) mutex;
 
     if (mtx->type & PTHREAD_MUTEX_RECURSIVE) {
         rmutexLock(&mtx->rmutex);
@@ -94,8 +185,9 @@ int pthread_mutex_lock(pthread_mutex_t *mtx) {
     return 0;
 }
 
-int pthread_mutex_unlock(pthread_mutex_t *mtx) {
-    if (!mtx) return EINVAL;
+int pthread_mutex_unlock(pthread_mutex_t *mutex) {
+    if (!mutex) return EINVAL;
+    struct pthread_mutex *mtx = *(struct pthread_mutex **) mutex;
 
     if (mtx->type & PTHREAD_MUTEX_RECURSIVE) {
         rmutexUnlock(&mtx->rmutex);
@@ -105,8 +197,9 @@ int pthread_mutex_unlock(pthread_mutex_t *mtx) {
     return 0;
 }
 
-int pthread_mutex_trylock(pthread_mutex_t *mtx) {
-    if (!mtx) return EINVAL;
+int pthread_mutex_trylock(pthread_mutex_t *mutex) {
+    if (!mutex) return EINVAL;
+    struct pthread_mutex *mtx = *(struct pthread_mutex **) mutex;
 
     bool res;
     if (mtx->type & PTHREAD_MUTEX_RECURSIVE) {
@@ -199,7 +292,7 @@ int pthread_join(pthread_t thr, void **res) {
     return R_SUCCEEDED(rc) ? 0 : EINVAL;
 }
 
-void pthread_exit(__unused void *retval) {
+_Noreturn void pthread_exit(__unused void *retval) {
     pthread_t t = pthread_self();
     t->rc = *(int *) retval; // FIXME not right...
     svcExitThread();
@@ -209,6 +302,7 @@ void pthread_exit(__unused void *retval) {
 
 int pthread_key_create(pthread_key_t *key, destructor_t destructor) {
     // FIXME implement
+    return 0;
 }
 
 void *pthread_getspecific(pthread_key_t key) {
@@ -269,7 +363,7 @@ int pthread_attr_getguardsize(__unused const pthread_attr_t *attr, __unused size
     return 0;
 }
 
-int pthread_attr_setdetachstate(pthread_attr_t *attr, enum pthread_attr_detachstate detachstate) {
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate) {
     if (!attr || attr->is_initialized != ATTR_MAGIC) return EINVAL;
     attr->detachstate = detachstate;
     return 0;
@@ -291,13 +385,13 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
 int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
     if (!attr) return EINVAL;
     attr->is_initialized = ATTR_MAGIC;
-    attr->type = PTHREAD_MUTEX_DEFAULT;
+    attr->recursive = 0;
     return 0;
 }
 
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
+int pthread_mutexattr_setrecursive(pthread_mutexattr_t *attr, int recursive) {
     if (!attr || attr->is_initialized != ATTR_MAGIC) return EINVAL;
-    attr->type = type;
+    attr->recursive = recursive;
     return 0;
 }
 
@@ -306,5 +400,12 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
 int pthread_condattr_init(pthread_condattr_t *attr) {
     if (!attr) return EINVAL;
     attr->is_initialized = ATTR_MAGIC;
+    return 0;
+}
+
+///// SCHED
+
+int sched_yield() {
+    svcSleepThread(-1); // FIXME?
     return 0;
 }

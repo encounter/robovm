@@ -36,11 +36,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#ifdef HORIZON
-#include "horizon/pthread.h"
-#else
 #include <pthread.h>
-#endif
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -731,7 +727,7 @@ void rvmLockObject(Env* env, Object* obj) {
     long minSleepDelayNs = 1000000;  /* 1 millisecond */
     long maxSleepDelayNs = 1000000000;  /* 1 second */
     LW_TYPE thin, newThin;
-    u32 threadId;
+    int32_t threadId;
 
     assert(self != NULL);
     assert(obj != NULL);

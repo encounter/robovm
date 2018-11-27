@@ -388,6 +388,7 @@ static void testCall0StackAlignment2(CuTest* tc) {
 #elif defined(RVM_ARM64) && defined(HORIZON)
 /*
  * Copying Darwin ARM64 semantics for now.
+ * FIXME these tests fail
  */
 asm("stackPointer:    \n\
         mov x0, sp     \n\
@@ -535,7 +536,9 @@ int main(int argc, char* argv[]) {
         kdown = hidKeysDown(CONTROLLER_P1_AUTO);
         if (kdown & KEY_PLUS)
             break;
+        consoleUpdate(NULL);
     }
+    consoleExit(NULL);
 #endif
     return ret;
 }

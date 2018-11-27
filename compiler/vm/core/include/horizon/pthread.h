@@ -4,125 +4,26 @@
 
 #include <time.h>
 
-// libnx
-#include <switch/types.h>
-#include <switch/result.h>
-#include <switch/arm/tls.h>
-#include <switch/kernel/condvar.h>
-#include <switch/kernel/mutex.h>
-#include <switch/kernel/thread.h>
-
 #define THRD_MAIN_HANDLE ((pthread_t) ~(uintptr_t) 0)
-
-#define PTHREAD_KEYS_MAX 32
-
-typedef struct {
-    /* Sequence numbers.  Even numbers indicate vacant entries.  Note
-       that zero is even.  We use uintptr_t to not require padding.  */
-    uintptr_t seq;
-
-    void (*destr)(void *);
-} pthread_key_struct;
-
-struct pthread {
-    Thread thr;
-    int rc;
-
-    struct pthread_key_data {
-        uintptr_t seq;
-        void *data;
-    } specific[PTHREAD_KEYS_MAX];
-};
-
-typedef struct pthread *pthread_t;
-
-typedef struct {
-    int type;
-    union {
-        Mutex mutex;
-        RMutex rmutex;
-    };
-} pthread_mutex_t;
-
-typedef CondVar pthread_cond_t;
-typedef uint32_t pthread_key_t;
 
 typedef void *(*thrd_start_t)(void *);
 typedef void (*destructor_t)(void*);
 
-enum pthread_attr_detachstate {
-    PTHREAD_CREATE_JOINABLE = 0,
-    PTHREAD_CREATE_DETACHED = 1
-};
-
-enum pthread_mutexattr_type {
-    PTHREAD_MUTEX_DEFAULT = 0,
-    PTHREAD_MUTEX_RECURSIVE = 1
-};
+//enum pthread_mutexattr_type {
+//    PTHREAD_MUTEX_DEFAULT = 0,
+//    PTHREAD_MUTEX_RECURSIVE = 1
+//};
 
 #define SCHED_PRIORITY_MIN 0
 #define SCHED_PRIORITY_MAX 0x3F
 
-struct sched_param {
-    uint32_t sched_priority;
-};
+#define PTHREAD_MUTEX_INITIALIZER NULL
 
-#define ATTR_MAGIC 0x21545625
-
-typedef struct {
-    int is_initialized;
-    void *stackaddr;
-    size_t stacksize;
-    struct sched_param schedparam;
-    enum pthread_attr_detachstate detachstate;
-} pthread_attr_t;
-
-typedef struct {
-    int is_initialized;
-    int type;
-} pthread_mutexattr_t;
-
-typedef struct {
-    int is_initialized;
-} pthread_condattr_t;
-
-#define PTHREAD_MUTEX_INITIALIZER {0}
-
-#define THREADVARS_MAGIC 0x21545624 // !TV$
-
-// FIXME need to keep in sync with nx/source/internal.h
-typedef struct {
-    // Magic value used to check if the struct is initialized
-    u32 magic;
-
-    // Thread handle, for mutexes
-    Handle handle;
-
-    // Pointer to the current thread (if exists)
-    Thread *thread_ptr;
-
-    // Pointer to this thread's newlib state
-    struct _reent *reent;
-
-    // Pointer to this thread's thread-local segment
-    void *tls_tp; // !! Offset needs to be TLS+0x1F8 for __aarch64_read_tp !!
-} ThreadVars;
-
-static inline ThreadVars *getThreadVars(void) {
-    return (ThreadVars *) ((u8 *) armGetTls() + 0x1E0);
-}
-
-static inline pthread_t pthread_self(void) {
-    ThreadVars *vars = getThreadVars();
-    Thread *t = vars->magic == THREADVARS_MAGIC ? vars->thread_ptr : NULL;
-    // We assume pthread_t is a struct whose first entry is Thread
-    // So we can cast it back to get our info
-    return t ? (pthread_t) t : THRD_MAIN_HANDLE;
-}
+pthread_t pthread_self();
 
 void pthread_kill(pthread_t thread, int signal);
 
-void pthread_exit(void *retval);
+_Noreturn void pthread_exit(void *retval);
 
 /**
  * Mutex
@@ -207,7 +108,7 @@ int pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr, size_t *
 
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize);
 
-int pthread_attr_setdetachstate(pthread_attr_t *attr, enum pthread_attr_detachstate detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
 
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
 
@@ -219,7 +120,7 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t guardsize);
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr);
 
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+int pthread_mutexattr_setrecursive(pthread_mutexattr_t *attr, int recursive);
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
@@ -233,10 +134,7 @@ int pthread_condattr_init(pthread_condattr_t *attr);
  * Sched
  */
 
-static inline int sched_yield() {
-    svcSleepThread(-1); // FIXME?
-    return 0;
-}
+int sched_yield();
 
 static inline int sched_get_priority_min(__unused int policy) {
     return SCHED_PRIORITY_MIN;

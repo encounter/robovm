@@ -16,17 +16,13 @@
 #ifndef ROBOVM_MUTEX_H
 #define ROBOVM_MUTEX_H
 
-#ifdef HORIZON
-#include "horizon/pthread.h"
-#else
 #include <pthread.h>
-#endif
 
 /* Mutex wrappers around pthread mutexes */
 static inline jint rvmInitMutex(RvmMutex* mutex) {
     pthread_mutexattr_t mutexAttrs;
     pthread_mutexattr_init(&mutexAttrs);
-    pthread_mutexattr_settype(&mutexAttrs, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutexattr_setrecursive(&mutexAttrs, 1);
     return pthread_mutex_init(mutex, &mutexAttrs);
 }
 static inline jint rvmDestroyMutex(RvmMutex* mutex) {

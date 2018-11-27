@@ -72,7 +72,7 @@ typedef struct ClassFilter {
     struct ClassFilter* next;
 } ClassFilter;
 
-Mutex classFilterMutex;
+RvmMutex classFilterMutex;
 ClassFilter* classFilters = 0;
 
 // set when receiving a vm suspend cmd
@@ -91,7 +91,7 @@ int clientSocket = 0;
 
 // thread handling requests from the debugger
 pthread_t debugThread;
-Mutex writeMutex;
+RvmMutex writeMutex;
 static void* channelLoop(void* data);
 
 // used to offset in PIE/ASLR mode

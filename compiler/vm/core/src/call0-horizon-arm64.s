@@ -41,13 +41,13 @@ _call0:
     // Copy stack args if there are any. The stackArgsSize is assumed to be 
     // divisable by 2 so that stackArgsSize<<3 is properly 16-byte aligned
     ldr w2, [x19, stackArgsSize_offset]
-    cbz w2, LsetStackArgsDone
+    cbz w2, .setStackArgsDone
     lsl x2, x2, #3
     sub sp, sp, x2
     mov x0, sp
     ldr x1, [x19, stackArgs_offset]
     bl memcpy
-LsetStackArgsDone:
+.setStackArgsDone:
 
     ldp x0, x1, [x19, intArgs_offset + 16 * 0] // x0 = ((CallInfo*) x19)->intArgs[0], x1 = ((CallInfo*) x19)->intArgs[1]
     ldp x2, x3, [x19, intArgs_offset + 16 * 1] // x2 = ((CallInfo*) x19)->intArgs[2], x3 = ((CallInfo*) x19)->intArgs[3]

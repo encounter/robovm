@@ -149,7 +149,9 @@ int main(int argc, char* argv[]) {
         kdown = hidKeysDown(CONTROLLER_P1_AUTO);
         if (kdown & KEY_PLUS)
             break;
+        consoleUpdate(NULL);
     }
+    consoleExit(NULL);
 #endif
     return ret;
 }

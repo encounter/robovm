@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 #define _GNU_SOURCE
-#ifdef HORIZON
-#include "horizon/pthread.h"
-#else
 #include <pthread.h>
-#endif
 #include <robovm.h>
 #if defined(DARWIN)
 # include <mach/mach.h>
