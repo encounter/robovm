@@ -51,7 +51,7 @@ static void CloseNonStandardFds(int status_pipe_fd) {
     properties_fd = atoi(properties_fd_string);
   }
 
-#ifndef HORIZON
+#ifndef __SWITCH__
   DIR* d = opendir(fd_path);
   int dir_fd = dirfd(d);
   dirent* e;

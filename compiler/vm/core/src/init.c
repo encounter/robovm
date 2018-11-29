@@ -31,7 +31,7 @@
 #include "utlist.h"
 #include <unistd.h>
 
-#if !defined(NDEBUG) && !defined(HORIZON)
+#if !defined(NDEBUG) && !defined(__SWITCH__)
 #   include <execinfo.h>
 #endif
 
@@ -80,7 +80,7 @@ static char* absolutize(char* basePath, char* rel, char* dest) {
 }
 
 static jboolean ignoreSignal(int signo) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     if (signal(signo, SIG_IGN) == SIG_ERR) {
         return FALSE;
     }
@@ -192,7 +192,7 @@ void rvmParseOption(char* arg, Options* options) {
 }
 
 static void parseRoboVMIni(Options* options) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     char path[PATH_MAX];
 
     // Look for a robovm.ini next to the executable
@@ -224,7 +224,7 @@ jboolean rvmInitOptions(int argc, char* argv[], Options* options, jboolean ignor
             return FALSE;
         }
     }
-#ifndef HORIZON
+#ifndef __SWITCH__
     else {
         // We're called via JNI. The caller could already have set
         // imagePath. If not we try to determine it via dladdr().
@@ -339,7 +339,7 @@ Env* rvmStartup(Options* options) {
     TRACE("Initializing GC");
     if (!initGC(options)) return NULL;
 
-#ifndef HORIZON
+#ifndef __SWITCH__
     // Ignore SIGPIPE signals. SIGPIPE interrupts write() calls which we don't
     // want. Dalvik does this too in dalvikvm/Main.cpp.
     if (!ignoreSignal(SIGPIPE)) return NULL;
@@ -539,7 +539,7 @@ void rvmAbort(char* format, ...) {
         va_end(args);
         fprintf(stderr, "\n");
     }
-#if !defined(NDEBUG) && !defined(HORIZON)
+#if !defined(NDEBUG) && !defined(__SWITCH__)
      void* callstack[256];
      int frames = backtrace(callstack, 256);
      char** strs = backtrace_symbols(callstack, frames);

@@ -16,11 +16,7 @@
 #ifndef PRIVATE_H
 #define PRIVATE_H
 
-#ifdef HORIZON
-#include "horizon/pthread.h"
-#else
 #include <pthread.h>
-#endif
 #include <robovm.h>
 
 /* memory.c */
@@ -451,7 +447,7 @@ static inline void proxy0ReturnDouble(CallInfo* ci, jdouble d) {
     ci->returnType = RETURN_TYPE_DOUBLE;
 }
 
-#elif (IOS || HORIZON) && RVM_ARM64
+#elif (IOS || __SWITCH__) && RVM_ARM64
 
 #define MAX_INT_ARGS 8
 #define MAX_FP_ARGS 8

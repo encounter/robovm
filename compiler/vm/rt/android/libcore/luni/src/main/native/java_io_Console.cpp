@@ -21,13 +21,13 @@
 #include "JniConstants.h"
 
 #include <errno.h>
-#ifndef HORIZON
+#ifndef __SWITCH__
 #include <termios.h>
 #endif
 #include <unistd.h>
 
 extern "C" jint Java_java_io_Console_setEchoImpl(JNIEnv* env, jclass, jboolean on, jint previousState) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     termios state;
     if (TEMP_FAILURE_RETRY(tcgetattr(STDIN_FILENO, &state)) == -1) {
         jniThrowIOException(env, errno);

@@ -168,7 +168,7 @@ public class ConfigTest {
         File p = new File(tmpDir, dir);
         for (OS os2 : OS.values()) {
             for (Arch arch2 : Arch.values()) {
-                File root = new File(p, "META-INF/robovm/" + os2 + "/" + arch2);
+                File root = new File(p, "META-INF/robovm/" + os2.getVmTargetName() + "/" + arch2);
                 root.mkdirs();
                 if (!new File(root, "robovm.xml").exists()) {
                     new Config.Builder().write(new File(root, "robovm.xml"));
@@ -176,7 +176,7 @@ public class ConfigTest {
             }
         }
 
-        File root = new File(p, "META-INF/robovm/" + os + "/" + arch);
+        File root = new File(p, "META-INF/robovm/" + os.getVmTargetName() + "/" + arch);
         new Config.Builder()
             .addExportedSymbol(id.toUpperCase() + "*")
             .addForceLinkClass("com." + id.toLowerCase() + ".**")

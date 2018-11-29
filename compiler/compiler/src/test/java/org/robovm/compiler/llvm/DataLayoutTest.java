@@ -16,8 +16,13 @@
  */
 package org.robovm.compiler.llvm;
 
-import static org.junit.Assert.*;
-import static org.robovm.compiler.llvm.Type.*;
+import static org.junit.Assert.assertEquals;
+import static org.robovm.compiler.llvm.Type.DOUBLE;
+import static org.robovm.compiler.llvm.Type.I16;
+import static org.robovm.compiler.llvm.Type.I32;
+import static org.robovm.compiler.llvm.Type.I64;
+import static org.robovm.compiler.llvm.Type.I8;
+import static org.robovm.compiler.llvm.Type.I8_PTR;
 
 import org.junit.Test;
 

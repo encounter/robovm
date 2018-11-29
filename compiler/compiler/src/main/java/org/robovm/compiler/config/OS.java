@@ -20,36 +20,43 @@ import org.robovm.llvm.Target;
 
 /**
  * @author niklas
- *
  */
 public enum OS {
-    linux("linux", "linux"),
-    macosx("macosx10.9.0", "10.9"),
-    ios("ios7.0.0", "7.0"),
-    horizon("", "horizon");
-    
+    linux("linux", "linux", "linux", Family.linux),
+    macosx("macosx", "macosx10.9.0", "10.9", Family.darwin),
+    ios("ios", "ios7.0.0", "7.0", Family.darwin),
+    horizon("switch", "horizon", "horizon", Family.horizon);
+
     public enum Family {linux, darwin, horizon}
 
+    private String vmTargetName;
     private final String llvmName;
     private final String minVersion;
+    private Family family;
 
-    private OS(String llvmName, String minVersion) {
+    OS(String vmTargetName, String llvmName, String minVersion, Family family) {
+        this.vmTargetName = vmTargetName;
         this.llvmName = llvmName;
         this.minVersion = minVersion;
+        this.family = family;
+    }
+
+    public String getVmTargetName() {
+        return vmTargetName;
     }
 
     public String getLlvmName() {
         return llvmName;
     }
-    
+
     public String getMinVersion() {
         return minVersion;
     }
-    
+
     public Family getFamily() {
-        return this == linux ? Family.linux : Family.darwin;
+        return family;
     }
-    
+
     public static OS getDefaultOS() {
         String hostTriple = Target.getHostTriple();
         if (hostTriple.contains("linux")) {

@@ -37,7 +37,7 @@ static AsynchronousSocketCloseMonitor* blockedThreadList = NULL;
 /**
  * The specific signal chosen here is arbitrary.
  */
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__SWITCH__)
 static const int BLOCKED_THREAD_SIGNAL = SIGUSR2;
 #else
 static const int BLOCKED_THREAD_SIGNAL = SIGRTMIN + 2;

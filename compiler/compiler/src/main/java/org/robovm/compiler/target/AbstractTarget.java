@@ -114,11 +114,8 @@ public abstract class AbstractTarget implements Target {
 
         config.getLogger().info("Building %s binary %s", config.getTarget().getType(), outFile);
 
-        LinkedList<String> ccArgs = new LinkedList<String>();
-        LinkedList<String> libs = new LinkedList<String>();
-
-        ccArgs.addAll(getTargetCcArgs());
-        libs.addAll(getTargetLibs());
+        LinkedList<String> ccArgs = new LinkedList<>(getTargetCcArgs());
+        LinkedList<String> libs = new LinkedList<>(getTargetLibs());
 
         String libSuffix = config.isUseDebugLibs() ? "-dbg" : "";
 
@@ -132,23 +129,28 @@ public abstract class AbstractTarget implements Target {
         if (config.isSkipInstall()) {
             libs.add("-lrobovm-debug" + libSuffix);
         }
-        libs.addAll(Arrays.asList(
-                "-lrobovm-core" + libSuffix, "-lgc" + libSuffix, "-lpthread", "-ldl", "-lm", "-lz"));
+        libs.addAll(Arrays.asList("-lrobovm-core" + libSuffix, "-lgc" + libSuffix, "-lm", "-lz"));
         if (config.getOs().getFamily() == OS.Family.linux) {
+            libs.add("-ldl");
+            libs.add("-lpthread");
             libs.add("-lrt");
         }
         if (config.getOs().getFamily() == OS.Family.darwin) {
+            libs.add("-ldl");
             libs.add("-liconv");
+            libs.add("-lpthread");
             libs.add("-lsqlite3");
             libs.add("-framework");
             libs.add("Foundation");
+        }
+        if (OS.Family.horizon.equals(config.getOs().getFamily())) {
+            libs.add("-lnx"); // FIXME add pthread here?
         }
 
         ccArgs.add("-L");
         ccArgs.add(config.getOsArchDepLibDir().getAbsolutePath());
 
-        List<String> exportedSymbols = new ArrayList<String>();
-        exportedSymbols.addAll(getTargetExportedSymbols());
+        List<String> exportedSymbols = new ArrayList<>(getTargetExportedSymbols());
         exportedSymbols.add("JNI_OnLoad_*");
         exportedSymbols.addAll(config.getExportedSymbols());
 
@@ -203,6 +205,25 @@ public abstract class AbstractTarget implements Target {
 
             ccArgs.add("-Wl,-no_implicit_dylibs");
             ccArgs.add("-Wl,-dead_strip");
+        } else if (OS.Family.horizon.equals(config.getOs().getFamily())) {
+            ccArgs.add("-specs=/opt/devkitpro/libnx/switch.specs"); // FIXME
+            ccArgs.add("-Wl,-no-as-needed");
+            ccArgs.add("-Wl,-rpath=$ORIGIN");
+            //            ccArgs.add("-Wl,--gc-sections");
+            //            ccArgs.add("-Wl,--print-gc-sections");
+
+            if (!exportedSymbols.isEmpty()) {
+                // Create an ld version script which makes the exported symbols global
+                // and all other symbols local.
+                StringBuilder sb = new StringBuilder();
+                sb.append("{\n    ");
+                sb.append(StringUtils.join(exportedSymbols, ";\n    "));
+                sb.append(";\n};\n");
+
+                File dynamicListFile = new File(config.getTmpDir(), "exported_symbols");
+                FileUtils.writeStringToFile(dynamicListFile, sb.toString());
+                ccArgs.add("-Wl,--dynamic-list=" + dynamicListFile.getAbsolutePath());
+            }
         }
 
         if (config.getOs().getFamily() == OS.Family.darwin && !config.getFrameworks().isEmpty()) {
@@ -289,8 +310,8 @@ public abstract class AbstractTarget implements Target {
         File destFile = new File(config.getTmpDir(), getExecutable());
         List<File> files = new ArrayList<>(slices.values());
         if (slices.size() > 1) {
-            if (config.getOs() == OS.linux) {
-                throw new UnsupportedOperationException("Fat binaries are not supported when building linux binaries");
+            if (config.getOs() == OS.linux || OS.horizon.equals(config.getOs())) {
+                throw new UnsupportedOperationException("Fat binaries are not supported when building for this OS");
             }
             config.getLogger().info("Building fat binary for archs %s", StringUtils.join(slices.keySet()));
             ToolchainUtil.lipo(config, destFile, files);

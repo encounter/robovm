@@ -19,9 +19,12 @@ typedef void (*destructor_t)(void*);
 
 #define PTHREAD_MUTEX_INITIALIZER NULL
 
+#define PTHREAD_MUTEX_RECURSIVE 1
+
 pthread_t pthread_self();
 
-void pthread_kill(pthread_t thread, int signal);
+// FIXME sys/signal.h
+//int pthread_kill(pthread_t thread, int signal);
 
 _Noreturn void pthread_exit(void *retval);
 
@@ -119,6 +122,8 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t guardsize);
  */
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr);
+
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 
 int pthread_mutexattr_setrecursive(pthread_mutexattr_t *attr, int recursive);
 

@@ -282,10 +282,10 @@ if (IOS)
 endif()
 if (HORIZON)
   set(EXT_PATH "$ENV{PATH}:${DEVKITA64}/bin")
-#  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS")
+  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX") # -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS
   set(EXT_HOST --host=aarch64-none-elf)
   set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-munmap=no --enable-parallel-mark=no") # FIXME
-  add_definitions(-DNN_BUILD_TARGET_PLATFORM_NX -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
+#  add_definitions(-DNN_BUILD_TARGET_PLATFORM_NX -DNINTENDO_SWITCH -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/core/include/horizon")
 #  add_definitions(-D_SYS__PTHREADTYPES_H_ -D_SYS_SIGNAL_H -D_SIGNAL_H_) # FIXME amazingly hacky
 endif()

@@ -16,38 +16,6 @@
  */
 package org.robovm.compiler;
 
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.robovm.compiler.clazz.Clazz;
-import org.robovm.compiler.clazz.ClazzInfo;
-import org.robovm.compiler.clazz.Clazzes;
-import org.robovm.compiler.clazz.MethodInfo;
-import org.robovm.compiler.clazz.Path;
-import org.robovm.compiler.config.Arch;
-import org.robovm.compiler.config.Config;
-import org.robovm.compiler.config.Config.TreeShakerMode;
-import org.robovm.compiler.config.ForceLinkMethodsConfig;
-import org.robovm.compiler.config.OS;
-import org.robovm.compiler.config.Resource;
-import org.robovm.compiler.config.StripArchivesConfig.StripArchivesBuilder;
-import org.robovm.compiler.log.ConsoleLogger;
-import org.robovm.compiler.plugin.LaunchPlugin;
-import org.robovm.compiler.plugin.Plugin;
-import org.robovm.compiler.plugin.PluginArgument;
-import org.robovm.compiler.plugin.TargetPlugin;
-import org.robovm.compiler.target.ConsoleTarget;
-import org.robovm.compiler.target.LaunchParameters;
-import org.robovm.compiler.target.ios.DeviceType;
-import org.robovm.compiler.target.ios.IOSSimulatorLaunchParameters;
-import org.robovm.compiler.target.ios.IOSTarget;
-import org.robovm.compiler.target.ios.ProvisioningProfile;
-import org.robovm.compiler.target.ios.SigningIdentity;
-import org.robovm.compiler.util.AntPathMatcher;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -74,6 +42,39 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.robovm.compiler.clazz.Clazz;
+import org.robovm.compiler.clazz.ClazzInfo;
+import org.robovm.compiler.clazz.Clazzes;
+import org.robovm.compiler.clazz.MethodInfo;
+import org.robovm.compiler.clazz.Path;
+import org.robovm.compiler.config.Arch;
+import org.robovm.compiler.config.Config;
+import org.robovm.compiler.config.Config.TreeShakerMode;
+import org.robovm.compiler.config.ForceLinkMethodsConfig;
+import org.robovm.compiler.config.OS;
+import org.robovm.compiler.config.Resource;
+import org.robovm.compiler.config.StripArchivesConfig.StripArchivesBuilder;
+import org.robovm.compiler.log.ConsoleLogger;
+import org.robovm.compiler.plugin.LaunchPlugin;
+import org.robovm.compiler.plugin.Plugin;
+import org.robovm.compiler.plugin.PluginArgument;
+import org.robovm.compiler.plugin.TargetPlugin;
+import org.robovm.compiler.target.ConsoleTarget;
+import org.robovm.compiler.target.LaunchParameters;
+import org.robovm.compiler.target.ios.DeviceType;
+import org.robovm.compiler.target.ios.SwitchTarget;
+import org.robovm.compiler.target.ios.IOSSimulatorLaunchParameters;
+import org.robovm.compiler.target.ios.IOSTarget;
+import org.robovm.compiler.target.ios.ProvisioningProfile;
+import org.robovm.compiler.target.ios.SigningIdentity;
+import org.robovm.compiler.util.AntPathMatcher;
 
 /**
  *
@@ -909,6 +910,7 @@ public class AppCompiler {
         List<String> targets = new ArrayList<>();
         targets.add(ConsoleTarget.TYPE);
         targets.add(IOSTarget.TYPE);
+        targets.add(SwitchTarget.TYPE);
         for (Plugin plugin : plugins) {
             if (plugin instanceof TargetPlugin) {
                 targets.add(((TargetPlugin) plugin).getTarget().getType());
@@ -948,8 +950,8 @@ public class AppCompiler {
                          + "                        archive.");
         System.err.println("  -o <name>             The name of the target binary");
         System.err.println("  -os <name>            The name of the OS to build for. Allowed values are \n" 
-                         + "                        'auto', 'linux', 'macosx' and 'ios'. Default is 'auto' which\n" 
-                         + "                        means use the LLVM deafult.");
+                         + "                        'auto', 'linux', 'macosx', 'ios' and 'horizon'.\n"
+                         + "                        Default is 'auto' which means use the LLVM default.");
         System.err.println("  -arch <name>          The name of the LLVM arch to compile for. Allowed values\n" 
                          + "                        are 'auto', 'x86', 'x86_64', 'thumbv7', 'arm64'. Default is\n" 
                          + "                        'auto' which means use the LLVM default.");
@@ -1076,16 +1078,14 @@ public class AppCompiler {
                          + "                        simulator via the -devicetype flag.");
         System.err.println("  -devicetype <type>    The device type to use to launch the simulator e.g. \"iPhone-6, 8.0\"\n"
                          + "                        (defaults to an iPhone simulator using the latest SDK).");
-        
-        if(plugins != null) {
-            for(Plugin plugin: plugins) {
-                if(plugin.getArguments().getArguments().size() > 0) {
-                    System.err.println(plugin.getClass().getSimpleName() + " options:");
-                    for(PluginArgument arg: plugin.getArguments().getArguments()) {
-                        String argString = "  -" + plugin.getArguments().getPrefix() + ":" + arg.getName() + (arg.hasValue()? "=" + arg.getValueName(): "");
-                        int whitespace = Math.max(1, 24 - argString.length());
-                        System.err.println(argString + repeat(" ", whitespace) + arg.getDescription());
-                    }
+
+        for(Plugin plugin: plugins) {
+            if(plugin.getArguments().getArguments().size() > 0) {
+                System.err.println(plugin.getClass().getSimpleName() + " options:");
+                for(PluginArgument arg: plugin.getArguments().getArguments()) {
+                    String argString = "  -" + plugin.getArguments().getPrefix() + ":" + arg.getName() + (arg.hasValue()? "=" + arg.getValueName(): "");
+                    int whitespace = Math.max(1, 24 - argString.length());
+                    System.err.println(argString + repeat(" ", whitespace) + arg.getDescription());
                 }
             }
         }

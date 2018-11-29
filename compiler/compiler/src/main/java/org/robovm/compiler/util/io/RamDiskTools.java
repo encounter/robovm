@@ -193,7 +193,7 @@ public class RamDiskTools {
     }
 
     private CacheDir constructCacheDir(File volume, OS os, Arch arch, boolean isDebug) {
-        File dir = new File(volume, "cache/" + os.toString() + "/" + arch.toString() + "/"
+        File dir = new File(volume, "cache/" + os.getVmTargetName() + "/" + arch.toString() + "/"
                 + (isDebug ? "debug" : "release"));
         if (!dir.exists())
             return null;

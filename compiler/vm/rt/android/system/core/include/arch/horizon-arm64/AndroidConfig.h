@@ -70,7 +70,7 @@
  * HAVE_WIN32_IPC - use Win32 IPC (CreateSemaphore, CreateFileMapping).
  * HAVE_ANDROID_IPC - use Android versions (?, mmap).
  */
-#define HAVE_MACOSX_IPC
+/* #define HAVE_MACOSX_IPC */
 
 /*
  * Memory-mapping model. Choose one:
@@ -78,12 +78,12 @@
  * HAVE_POSIX_FILEMAP - use the Posix sys/mmap.h
  * HAVE_WIN32_FILEMAP - use Win32 filemaps
  */
-#define  HAVE_POSIX_FILEMAP
+#define HAVE_POSIX_FILEMAP
 
 /*
  * Define this if you have <termio.h>
  */
-#define  HAVE_TERMIO_H
+/* #define  HAVE_TERMIO_H */
 
 /*
  * Define this if you have <sys/sendfile.h>
@@ -98,7 +98,7 @@
 /*
  * Define this if you have sys/uio.h
  */
-//#define  HAVE_SYS_UIO_H
+/* #define  HAVE_SYS_UIO_H */
 
 /*
  * Define this if your platforms implements symbolic links
@@ -193,7 +193,7 @@
 /*
  * Define if we have <malloc.h> header
  */
-/* #define HAVE_MALLOC_H */
+#define HAVE_MALLOC_H
 
 /*
  * Define if tm struct has tm_gmtoff field
@@ -208,12 +208,12 @@
 /*
  * Define if we have madvise() in <sys/mman.h>
  */
-#define HAVE_MADVISE 1
+#define HAVE_MADVISE 0
 
 /*
  * Define if we include <sys/mount.h> for statfs()
  */
-#define INCLUDE_SYS_MOUNT_FOR_STATFS 1
+#define INCLUDE_SYS_MOUNT_FOR_STATFS 0
 
 /*
  * What CPU architecture does this platform use?
@@ -223,7 +223,7 @@
 /*
  * sprintf() format string for shared library naming.
  */
-#define OS_SHARED_LIB_FORMAT_STR    "lib%s"
+#define OS_SHARED_LIB_FORMAT_STR    "%s.nro"
 
 /*
  * type for the third argument to mincore().
@@ -240,7 +240,7 @@
  *
  * For tools apps, we'll treat is as not case sensitive.
  */
-/* #define OS_CASE_SENSITIVE */
+#define OS_CASE_SENSITIVE
 
 /*
  * Define if <sys/socket.h> exists.
@@ -250,7 +250,7 @@
 /*
  * Define if the strlcpy() function exists on the system.
  */
-#define HAVE_STRLCPY 1
+/* #define HAVE_STRLCPY 1 */
 
 /*
  * Define if the open_memstream() function exists on the system.
@@ -305,5 +305,6 @@
 #define HAVE_UINT64_T
 #define NO_SYSLOG
 #define NO_SYS_UN_H
+#define HAVE_POSIX_FALLOCATE 0
 
 #endif /*_ANDROID_CONFIG_H*/

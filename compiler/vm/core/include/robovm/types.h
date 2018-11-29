@@ -439,7 +439,7 @@ struct TrycatchContext {
     double d13;
     double d14;
     double d15;
-#elif (defined(DARWIN) || defined(HORIZON)) && defined(RVM_ARM64)
+#elif (defined(DARWIN) || defined(__SWITCH__)) && defined(RVM_ARM64)
     void* sp; // x31
     void* x19;
     void* x20;

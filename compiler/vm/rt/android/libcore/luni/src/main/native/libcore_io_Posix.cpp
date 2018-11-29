@@ -52,7 +52,9 @@
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#ifndef __SWITCH__
 #include <termios.h>
+#endif
 #include <unistd.h>
 
 #if defined(__APPLE__)
@@ -287,7 +289,7 @@ static jobject makeStructTimeval(JNIEnv* env, const struct timeval& tv) {
 }
 
 // RoboVM note: Darwin doesn't have a compatible struct ucred
-#if !defined(__APPLE__) && !defined(HORIZON)
+#if !defined(__APPLE__) && !defined(__SWITCH__)
 static jobject makeStructUcred(JNIEnv* env, const struct ucred& u) {
   static jmethodID ctor = env->GetMethodID(JniConstants::structUcredClass, "<init>", "(III)V");
   return env->NewObject(JniConstants::structUcredClass, ctor, u.pid, u.uid, u.gid);
@@ -566,7 +568,7 @@ extern "C" jint Java_libcore_io_Posix_fcntlFlock(JNIEnv* env, jobject, jobject j
     static jfieldID startFid = env->GetFieldID(JniConstants::structFlockClass, "l_start", "J");
     static jfieldID lenFid = env->GetFieldID(JniConstants::structFlockClass, "l_len", "J");
     static jfieldID pidFid = env->GetFieldID(JniConstants::structFlockClass, "l_pid", "I");
-#ifdef HORIZON
+#ifdef __SWITCH__
 #define flock64 flock
 #endif
     struct flock64 lock;
@@ -608,7 +610,7 @@ extern "C" jobject Java_libcore_io_Posix_fstat(JNIEnv* env, jobject, jobject jav
 extern "C" jobject Java_libcore_io_Posix_fstatvfs(JNIEnv* env, jobject, jobject javaFd) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     struct statvfs sb;
-#ifndef HORIZON // FIXME
+#ifndef __SWITCH__ // FIXME
     int rc = TEMP_FAILURE_RETRY(fstatvfs(fd, &sb));
     if (rc == -1) {
         throwErrnoException(env, "fstatvfs");
@@ -625,7 +627,7 @@ extern "C" void Java_libcore_io_Posix_fsync(JNIEnv* env, jobject, jobject javaFd
 
 extern "C" void Java_libcore_io_Posix_ftruncate(JNIEnv* env, jobject, jobject javaFd, jlong length) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef HORIZON
+#ifdef __SWITCH__
 #define ftruncate64 ftruncate
 #endif
     throwIfMinusOne(env, "ftruncate", TEMP_FAILURE_RETRY(ftruncate64(fd, length)));
@@ -824,7 +826,7 @@ extern "C" jobject Java_libcore_io_Posix_getsockoptTimeval(JNIEnv* env, jobject,
 }
 
 // RoboVM note: Darwin doesn't have a compatible struct ucred
-#if !defined(__APPLE__) && !defined(HORIZON)
+#if !defined(__APPLE__) && !defined(__SWITCH__)
 extern "C" jobject Java_libcore_io_Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
   int fd = jniGetFDFromFileDescriptor(env, javaFd);
   struct ucred u;
@@ -837,7 +839,7 @@ extern "C" jobject Java_libcore_io_Posix_getsockoptUcred(JNIEnv* env, jobject, j
   }
   return makeStructUcred(env, u);
 }
-#elif defined(HORIZON)
+#elif defined(__SWITCH__)
 extern "C" jobject Java_libcore_io_Posix_getsockoptUcred(JNIEnv* env, jobject, jobject javaFd, jint level, jint option) {
     return nullptr;
 }
@@ -870,7 +872,7 @@ extern "C" jobject Java_libcore_io_Posix_getsockoptUcred(JNIEnv* env, jobject, j
 #endif
 
 // RoboVM note: Darwin doesn't have gettid()
-#if !defined(__APPLE__) && !defined(HORIZON)
+#if !defined(__APPLE__) && !defined(__SWITCH__)
 extern "C" jint Java_libcore_io_Posix_gettid(JNIEnv*, jobject) {
   // Neither bionic nor glibc exposes gettid(2).
   return syscall(__NR_gettid);
@@ -882,7 +884,7 @@ extern "C" jint Java_libcore_io_Posix_getuid(JNIEnv*, jobject) {
 }
 
 extern "C" jstring Java_libcore_io_Posix_if_1indextoname(JNIEnv* env, jobject, jint index) {
-#ifdef HORIZON
+#ifdef __SWITCH__
     return NULL;
 #else
     char buf[IF_NAMESIZE];
@@ -941,7 +943,7 @@ extern "C" jboolean Java_libcore_io_Posix_isatty(JNIEnv* env, jobject, jobject j
 }
 
 extern "C" void Java_libcore_io_Posix_kill(JNIEnv* env, jobject, jint pid, jint sig) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     throwIfMinusOne(env, "kill", TEMP_FAILURE_RETRY(kill(pid, sig)));
 #endif
 }
@@ -961,7 +963,7 @@ extern "C" void Java_libcore_io_Posix_listen(JNIEnv* env, jobject, jobject javaF
 
 extern "C" jlong Java_libcore_io_Posix_lseek(JNIEnv* env, jobject, jobject javaFd, jlong offset, jint whence) {
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef HORIZON
+#ifdef __SWITCH__
 #define lseek64 lseek
 #endif
     return throwIfMinusOne(env, "lseek", TEMP_FAILURE_RETRY(lseek64(fd, offset, whence)));
@@ -972,7 +974,7 @@ extern "C" jobject Java_libcore_io_Posix_lstat(JNIEnv* env, jobject, jstring jav
 }
 
 extern "C" void Java_libcore_io_Posix_mincore(JNIEnv* env, jobject, jlong address, jlong byteCount, jbyteArray javaVector) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     ScopedByteArrayRW vector(env, javaVector);
     if (vector.get() == NULL) {
         return;
@@ -1106,7 +1108,7 @@ extern "C" jint Java_libcore_io_Posix_preadBytes(JNIEnv* env, jobject, jobject j
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef HORIZON
+#ifdef __SWITCH__
 #define pread64 pread
 #endif
     return throwIfMinusOne(env, "pread", TEMP_FAILURE_RETRY(pread64(fd, bytes.get() + byteOffset, byteCount, offset)));
@@ -1118,7 +1120,7 @@ extern "C" jint Java_libcore_io_Posix_pwriteBytes(JNIEnv* env, jobject, jobject 
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef HORIZON
+#ifdef __SWITCH__
 #define pwrite64 pwrite
 #endif
     return throwIfMinusOne(env, "pwrite", TEMP_FAILURE_RETRY(pwrite64(fd, bytes.get() + byteOffset, byteCount, offset)));
@@ -1204,7 +1206,7 @@ extern "C" void Java_libcore_io_Posix_rename(JNIEnv* env, jobject, jstring javaO
 }
 
 extern "C" jlong Java_libcore_io_Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
-#ifdef HORIZON
+#ifdef __SWITCH__
     return 0;
 #else
     int outFd = jniGetFDFromFileDescriptor(env, javaOutFd);
@@ -1522,14 +1524,14 @@ extern "C" jlong Java_libcore_io_Posix_sysconf(JNIEnv* env, jobject, jint name) 
 }
 
 extern "C" void Java_libcore_io_Posix_tcdrain(JNIEnv* env, jobject, jobject javaFd) {
-#ifndef HORIZON
+#ifndef __SWITCH__
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "tcdrain", TEMP_FAILURE_RETRY(tcdrain(fd)));
 #endif
 }
 
 extern "C" void Java_libcore_io_Posix_tcsendbreak(JNIEnv* env, jobject, jobject javaFd, jint duration) {
-#ifndef HORIZON
+#ifndef __SWITCH__
   int fd = jniGetFDFromFileDescriptor(env, javaFd);
   throwIfMinusOne(env, "tcsendbreak", TEMP_FAILURE_RETRY(tcsendbreak(fd, duration)));
 #endif
@@ -1540,8 +1542,8 @@ extern "C" jint Java_libcore_io_Posix_umaskImpl(JNIEnv*, jobject, jint mask) {
 }
 
 extern "C" jobject Java_libcore_io_Posix_uname(JNIEnv* env, jobject) {
-#ifdef HORIZON
-    return NULL;
+#ifdef __SWITCH__
+    return NULL; // FIXME implement
 #else
     struct utsname buf;
     if (TEMP_FAILURE_RETRY(uname(&buf)) == -1) {

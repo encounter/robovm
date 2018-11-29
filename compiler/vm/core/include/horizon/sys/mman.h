@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/types.h>
+
 #define PROT_EXEC 0
 #define PROT_NONE 0
 #define PROT_READ 0

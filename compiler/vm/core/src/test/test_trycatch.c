@@ -17,7 +17,7 @@
 #include <string.h>
 #include "CuTest.h"
 
-#ifdef HORIZON
+#ifdef __SWITCH__
 #include <switch.h>
 #endif
 
@@ -137,12 +137,12 @@ int runTests(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef HORIZON
+#ifdef __SWITCH__
     consoleInit(NULL);
     printf("Starting test_trycatch\n");
 #endif
     int ret = runTests(argc, argv);
-#ifdef HORIZON
+#ifdef __SWITCH__
     u64 kdown;
     while (appletMainLoop()) {
         hidScanInput();

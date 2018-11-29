@@ -118,7 +118,7 @@ for T in $TARGETS; do
     BUILD_TYPE=$B
     mkdir -p "$BASE/target/build/$T-$B"
     rm -rf "$BASE/binaries/$OS/$ARCH/$B"
-    bash -xc "cd '$BASE/target/build/$T-$B'; cmake $CMAKE_OPTS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make $VERBOSE install"
+    bash -xc "cd '$BASE/target/build/$T-$B'; cmake $CMAKE_OPTS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make -j$(nproc) $VERBOSE install"
     R=$?
     if [[ $R != 0 ]]; then
       echo "$T-$B build failed"

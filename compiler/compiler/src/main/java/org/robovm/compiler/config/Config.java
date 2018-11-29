@@ -76,6 +76,7 @@ import org.robovm.compiler.plugin.objc.ObjCProtocolProxyPlugin;
 import org.robovm.compiler.target.ConsoleTarget;
 import org.robovm.compiler.target.Target;
 import org.robovm.compiler.target.framework.FrameworkTarget;
+import org.robovm.compiler.target.ios.SwitchTarget;
 import org.robovm.compiler.target.ios.IOSTarget;
 import org.robovm.compiler.target.ios.ProvisioningProfile;
 import org.robovm.compiler.target.ios.SigningIdentity;
@@ -330,7 +331,7 @@ public class Config {
     }
 
     public boolean isSkipRuntimeLib() {
-        return skipRuntimeLib != null && skipRuntimeLib.booleanValue();
+        return skipRuntimeLib != null && skipRuntimeLib;
     }
 
     public boolean isSkipLinking() {
@@ -744,8 +745,8 @@ public class Config {
 
     private void mergeConfigsFromClasspath() throws IOException {
         List<String> dirs = Arrays.asList(
-                "META-INF/robovm/" + os + "/" + sliceArch,
-                "META-INF/robovm/" + os);
+                "META-INF/robovm/" + os.getVmTargetName() + "/" + sliceArch,
+                "META-INF/robovm/" + os.getVmTargetName());
 
         // The algorithm below preserves the order of config data from the
         // classpath. Last the config from this object is added.
@@ -883,22 +884,30 @@ public class Config {
         }
 
         if (targetType != null) {
-            if (ConsoleTarget.TYPE.equals(targetType)) {
-                target = new ConsoleTarget();
-            } else if (IOSTarget.TYPE.equals(targetType)) {
-                target = new IOSTarget();
-            } else if (FrameworkTarget.TYPE.equals(targetType)) {
-                target = new FrameworkTarget();
-            } else {
-                for (TargetPlugin plugin : getTargetPlugins()) {
-                    if (plugin.getTarget().getType().equals(targetType)) {
-                        target = plugin.getTarget();
-                        break;
+            switch (targetType) {
+                case ConsoleTarget.TYPE:
+                    target = new ConsoleTarget();
+                    break;
+                case IOSTarget.TYPE:
+                    target = new IOSTarget();
+                    break;
+                case FrameworkTarget.TYPE:
+                    target = new FrameworkTarget();
+                    break;
+                case SwitchTarget.TYPE:
+                    target = new SwitchTarget();
+                    break;
+                default:
+                    for (TargetPlugin plugin : getTargetPlugins()) {
+                        if (plugin.getTarget().getType().equals(targetType)) {
+                            target = plugin.getTarget();
+                            break;
+                        }
                     }
-                }
-                if (target == null) {
-                    throw new IllegalArgumentException("Unsupported target '" + targetType + "'");
-                }
+                    if (target == null) {
+                        throw new IllegalArgumentException("Unsupported target '" + targetType + "'");
+                    }
+                    break;
             }
         } else {
             // Auto
@@ -919,8 +928,7 @@ public class Config {
         sliceArch = target.getArch();
         dataLayout = new DataLayout(getTriple());
 
-        osArchDepLibDir = new File(new File(home.libVmDir, os.toString()),
-                sliceArch.toString());
+        osArchDepLibDir = new File(new File(home.libVmDir, os.getVmTargetName()), sliceArch.toString());
 
         if (treeShakerMode != null && treeShakerMode != TreeShakerMode.none 
                 && os.getFamily() == Family.darwin && sliceArch == Arch.x86) {
@@ -938,7 +946,7 @@ public class Config {
         this.cacheDir = ramDiskTools.getCacheDir();
         this.tmpDir = ramDiskTools.getTmpDir();
 
-        File osDir = new File(cacheDir, os.toString());
+        File osDir = new File(cacheDir, os.getVmTargetName());
         File archDir = new File(osDir, sliceArch.toString());
         osArchCacheDir = new File(archDir, debug ? "debug" : "release");
         osArchCacheDir.mkdirs();

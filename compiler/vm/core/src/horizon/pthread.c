@@ -389,6 +389,12 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr) {
     return 0;
 }
 
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
+    if (!attr || attr->is_initialized != ATTR_MAGIC) return EINVAL;
+    attr->recursive = (type & PTHREAD_MUTEX_RECURSIVE) == PTHREAD_MUTEX_RECURSIVE;
+    return 0;
+}
+
 int pthread_mutexattr_setrecursive(pthread_mutexattr_t *attr, int recursive) {
     if (!attr || attr->is_initialized != ATTR_MAGIC) return EINVAL;
     attr->recursive = recursive;

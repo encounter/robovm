@@ -356,8 +356,7 @@ public class ToolchainUtil {
          * 
          * The linker on Linux will fail if we don't quote paths with spaces.
          */
-        List<File> objectsFiles = writeObjectsFiles(config, objectFiles, isDarwin ? 0xffff : Integer.MAX_VALUE,
-                !isDarwin);
+        List<File> objectsFiles = writeObjectsFiles(config, objectFiles, isDarwin ? 0xffff : Integer.MAX_VALUE, !isDarwin);
 
         List<String> opts = new ArrayList<String>();
         if (config.isDebug()) {
@@ -375,7 +374,9 @@ public class ToolchainUtil {
              */
             opts.add("-w");
         } else {
-            opts.add(config.getArch().is32Bit() ? "-m32" : "-m64");
+            if (config.getOs().getFamily() != OS.Family.horizon) {
+                opts.add(config.getArch().is32Bit() ? "-m32" : "-m64");
+            }
             for (File objectsFile : objectsFiles) {
                 opts.add("@" + objectsFile.getAbsolutePath());
             }
@@ -386,7 +387,15 @@ public class ToolchainUtil {
     }
 
     private static String getCcPath(Config config) throws IOException {
-        String ccPath = config.getOs().getFamily() == OS.Family.darwin ? "clang++" : "g++";
+        String ccPath;
+        OS.Family family = config.getOs().getFamily();
+        if (family == OS.Family.darwin) {
+            ccPath = "clang++";
+        } else if (config.getArch().getCrossPrefix() != null) {
+            ccPath = config.getArch().getCrossPrefix() + "-g++";
+        } else {
+            ccPath = "g++";
+        }
         if (config.getCcBinPath() != null) {
             ccPath = config.getCcBinPath().getAbsolutePath();
         } else if (config.getOs() == OS.ios) {

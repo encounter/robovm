@@ -23,62 +23,68 @@ import org.robovm.llvm.Target;
 
 /**
  * @author niklas
- *
  */
 public enum Arch {
     x86("i386", "i386", "penryn", true, false),
     x86_64("x86_64", "x86_64", "penryn", false, false),
     thumbv7("thumbv7", "armv7", true, true),
-    arm64("arm64", "arm64", false, true);
-    
+    arm64("arm64", "arm64", false, true, "aarch64-none-elf");
+
     private final String llvmName;
     private final String clangName;
     private final String llvmCpu;
     private final boolean is32Bit;
     private final boolean isArm;
     private final ByteOrder byteOrder;
-    
-    private Arch(String llvmName, String clangName, boolean is32Bit, boolean isArm) {
+    private String crossPrefix;
+
+    Arch(String llvmName, String clangName, boolean is32Bit, boolean isArm) {
         this(llvmName, clangName, "generic", is32Bit, isArm);
     }
 
-    private Arch(String llvmName, String clangName, String llvmCpu, boolean is32Bit, boolean isArm) {
+    Arch(String llvmName, String clangName, String llvmCpu, boolean is32Bit, boolean isArm) {
         this(llvmName, clangName, llvmCpu, is32Bit, isArm, ByteOrder.LITTLE_ENDIAN);
     }
-    
-    private Arch(String llvmName, String clangName, String llvmCpu, boolean is32Bit, boolean isArm, ByteOrder byteOrder) {
+
+    Arch(String llvmName, String clangName, String llvmCpu, boolean is32Bit, boolean isArm, ByteOrder byteOrder) {
         this.llvmName = llvmName;
         this.clangName = clangName;
         this.llvmCpu = llvmCpu;
         this.is32Bit = is32Bit;
         this.isArm = isArm;
         this.byteOrder = byteOrder;
+        this.crossPrefix = null;
     }
-    
+
+    Arch(String llvmName, String clangName, boolean is32Bit, boolean isArm, String crossPrefix) {
+        this(llvmName, clangName, "generic", is32Bit, isArm);
+        this.crossPrefix = crossPrefix;
+    }
+
     public String getLlvmName() {
         return llvmName;
     }
-    
+
     public String getClangName() {
         return clangName;
     }
-    
+
     public String getLlvmCpu() {
         return llvmCpu;
     }
-    
+
     public boolean isArm() {
         return isArm;
     }
-    
+
     public boolean is32Bit() {
         return is32Bit;
     }
-    
+
     public ByteOrder getByteOrder() {
         return byteOrder;
     }
-    
+
     public static Arch getDefaultArch() {
         String hostTriple = Target.getHostTriple();
         if (hostTriple.matches("^(x86.64|amd64).*")) {
@@ -88,5 +94,9 @@ public enum Arch {
             return Arch.x86;
         }
         throw new CompilerException("Unrecognized arch in host triple: " + hostTriple);
-    }    
+    }
+
+    public String getCrossPrefix() {
+        return crossPrefix;
+    }
 }

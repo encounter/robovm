@@ -40,7 +40,7 @@ if(DARWIN)
   set_property(SOURCE ${OBJC_SRC} PROPERTY LANGUAGE C)
   set_property(SOURCE ${OBJC_SRC} PROPERTY COMPILE_FLAGS ${OBJC_FLAGS})
 elseif(HORIZON)
-  set(SRC ${SRC} horizon/pthread.c horizon/signal.c)
+  set(SRC ${SRC} horizon/pthread.c horizon/signal.c horizon/mman.c)
 endif()
 
 # The code in unwind.c doesn't work properly if compiled with tail call optimizations

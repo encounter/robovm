@@ -18,7 +18,7 @@
 #include "../private.h"
 #include "CuTest.h"
 
-#ifdef HORIZON
+#ifdef __SWITCH__
 #include <switch.h>
 #endif
 
@@ -385,7 +385,7 @@ static void testCall0StackAlignment2(CuTest* tc) {
     void* result = f(ci);
     CuAssertTrue(tc, (((ptrdiff_t) result) & 0xf) == 0);
 }
-#elif defined(RVM_ARM64) && defined(HORIZON)
+#elif defined(RVM_ARM64) && defined(__SWITCH__)
 /*
  * Copying Darwin ARM64 semantics for now.
  * FIXME these tests fail
@@ -524,12 +524,12 @@ int runTests(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef HORIZON
+#ifdef __SWITCH__
     consoleInit(NULL);
     printf("Starting test_call0\n");
 #endif
     int ret = runTests(argc, argv);
-#ifdef HORIZON
+#ifdef __SWITCH__
     u64 kdown;
     while (appletMainLoop()) {
         hidScanInput();

@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-#ifndef HORIZON
+#ifndef __SWITCH__
 #include <sys/un.h>
 #endif
 
@@ -63,7 +63,7 @@ jobject sockaddrToInetAddress(JNIEnv* env, const sockaddr_storage& ss, jint* por
         addressLength = 16;
         sin_port = ntohs(sin6.sin6_port);
         scope_id = sin6.sin6_scope_id;
-#ifndef HORIZON
+#ifndef __SWITCH__
     } else if (ss.ss_family == AF_UNIX) {
         const sockaddr_un& sun = reinterpret_cast<const sockaddr_un&>(ss);
         rawAddress = &sun.sun_path;
@@ -138,7 +138,7 @@ static bool inetAddressToSockaddr(JNIEnv* env, jobject inetAddress, int port, so
 
     // Handle the AF_UNIX special case.
     if (ss.ss_family == AF_UNIX) {
-#ifndef HORIZON
+#ifndef __SWITCH__
         sockaddr_un& sun = reinterpret_cast<sockaddr_un&>(ss);
 
         size_t path_length = env->GetArrayLength(addressBytes.get());

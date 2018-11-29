@@ -20,7 +20,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
-#ifndef HORIZON
+#ifndef __SWITCH__
 #include <ifaddrs.h>
 #endif
 #include <errno.h>
@@ -74,7 +74,7 @@ static jboolean ioctl_ifreq(Env* env, Object* interfaceName, struct ifreq* ifreq
 
 }
 
-#ifndef HORIZON
+#ifndef __SWITCH__
 static jboolean iterateAddrInfo(Env* env, const char* interfaceName, jboolean (*f)(Env*, struct ifaddrs *, void*), void* data) {
     struct ifaddrs *ap, *apit;
     if (getifaddrs(&ap) < 0) {
@@ -104,7 +104,7 @@ ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* c
     }
 
     jint count = 0;
-#ifndef HORIZON
+#ifndef __SWITCH__
     struct if_nameindex* ifs = if_nameindex();
     if (!ifs) {
         // Assume out of memory
@@ -121,7 +121,7 @@ ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* c
         goto done;
     }
 
-#ifndef HORIZON
+#ifndef __SWITCH__
     jint i = 0;
     for (i = 0; i < count; i++) {
         Object* name = rvmNewStringUTF(env, ifs[i].if_name, -1);
@@ -133,7 +133,7 @@ ObjectArray* Java_java_net_NetworkInterface_getInterfaceNames(Env* env, Class* c
 #endif
 
 done:
-#ifndef HORIZON
+#ifndef __SWITCH__
     if_freenameindex(ifs);
 #endif
     return result;
@@ -144,7 +144,7 @@ jint Java_java_net_NetworkInterface_getInterfaceIndex(Env* env, Class* cls, Obje
     if (!name) {
         return 0;
     }
-#ifdef HORIZON
+#ifdef __SWITCH__
     return -1;
 #else
     return if_nametoindex(name);
@@ -193,7 +193,7 @@ ByteArray* Java_java_net_NetworkInterface_getHardwareAddress(Env* env, Class* cl
 #if defined(DARWIN)
     // Darwin doesn't have SIOCGIFHWADDR so we need to use getifaddrs() instead.
     iterateAddrInfo(env, name, getHardwareAddressIterator, &result);
-#elif !defined(HORIZON)
+#elif !defined(__SWITCH__)
     struct ifreq ifreq;
     if (!ioctl_ifreq(env, interfaceName, &ifreq, SIOCGIFHWADDR)) {
         return NULL;
@@ -209,7 +209,7 @@ ByteArray* Java_java_net_NetworkInterface_getHardwareAddress(Env* env, Class* cl
 }
 
 
-#ifndef HORIZON
+#ifndef __SWITCH__
 static jboolean countIpv6AddressesIterator(Env* env, struct ifaddrs *ia, void* data) {
     jint* count = (jint*) data;
     if (ia->ifa_addr && ia->ifa_addr->sa_family == AF_INET6) {
@@ -240,7 +240,7 @@ ByteArray* Java_java_net_NetworkInterface_getIpv6Addresses(Env* env, Class* cls,
     if (!name) {
         return NULL;
     }
-#ifdef HORIZON
+#ifdef __SWITCH__
     return NULL;
 #else
     jint count = 0;
@@ -266,7 +266,7 @@ ByteArray* Java_java_net_NetworkInterface_getIpv6Addresses(Env* env, Class* cls,
 }
 
 #define IPV4_BYTES 4
-#ifndef HORIZON
+#ifndef __SWITCH__
 static jboolean countIpv4AddressesIterator(Env* env, struct ifaddrs *ia, void* data) {
     jint* count = (jint*) data;
     if (ia->ifa_addr && ia->ifa_addr->sa_family == AF_INET) {
@@ -301,7 +301,7 @@ ByteArray* Java_java_net_NetworkInterface_getIpv4Addresses(Env* env, Class* cls,
     if (!name) {
         return NULL;
     }
-#ifdef HORIZON
+#ifdef __SWITCH__
     return NULL;
 #else
     jint count = 0;
