@@ -11,15 +11,16 @@ Usage: $SELF [options]
 Options:
   --build=[release|debug] Specifies the build type. If not set both release
                           and debug versions of the libraries will be built.
-  --target=...            Specifies the target(s) to build for. Supported 
+  --target=...            Specifies the target(s) to build for. Supported
                           targets are macosx-x86_64, macosx-x86, ios-x86_64,
-                          ios-x86, ios-thumbv7, ios-arm64, linux-x86_64, 
-                          linux-x86. Enclose multiple targets in quotes and 
-                          separate with spaces or specify --target multiple
-                          times. If not set the current host OS determines the
-                          targets. macosx-x86_64, macosx-x86, ios-x86_64,
-                          ios-x86, ios-thumbv7 and ios-arm64 on MacOSX and
-                          linux-x86_64 and linux-x86 on Linux.
+                          ios-x86, ios-thumbv7, ios-arm64, linux-x86_64,
+                          linux-x86, switch-arm64. Enclose multiple targets
+                          in quotes and separate with spaces or specify
+                          --target multiple times. If not set the current
+                          host OS determines the targets. macosx-x86_64,
+                          macosx-x86, ios-x86_64, ios-x86, ios-thumbv7 and
+                          ios-arm64, switch-arm64 on MacOSX and linux-x86_64,
+                          linux-x86 and switch-arm64 on Linux.
   --verbose               Enable verbose output during the build.
   --clean                 Cleans the build dir before starting the build.
   --help                  Displays this information and exits.
@@ -118,7 +119,7 @@ for T in $TARGETS; do
     BUILD_TYPE=$B
     mkdir -p "$BASE/target/build/$T-$B"
     rm -rf "$BASE/binaries/$OS/$ARCH/$B"
-    bash -xc "cd '$BASE/target/build/$T-$B'; cmake $CMAKE_OPTS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make -j$(nproc) $VERBOSE install"
+    bash -xc "cd '$BASE/target/build/$T-$B'; cmake $CMAKE_OPTS -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOS=$OS -DARCH=$ARCH '$BASE'; make $VERBOSE install"
     R=$?
     if [[ $R != 0 ]]; then
       echo "$T-$B build failed"

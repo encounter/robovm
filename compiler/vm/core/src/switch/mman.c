@@ -32,3 +32,8 @@ int msync(void *addr, size_t length, int flags) {
     printf("[WARN] Called unimplemented function msync()");
     return 0;
 }
+
+int mprotect(void *addr, size_t len, int prot) {
+    printf("[WARN] Called unimplemented function mprotect()");
+    return 0;
+}

@@ -22,7 +22,7 @@
 static inline jint rvmInitMutex(RvmMutex* mutex) {
     pthread_mutexattr_t mutexAttrs;
     pthread_mutexattr_init(&mutexAttrs);
-    pthread_mutexattr_setrecursive(&mutexAttrs, 1);
+    pthread_mutexattr_settype(&mutexAttrs, PTHREAD_MUTEX_RECURSIVE);
     return pthread_mutex_init(mutex, &mutexAttrs);
 }
 static inline jint rvmDestroyMutex(RvmMutex* mutex) {

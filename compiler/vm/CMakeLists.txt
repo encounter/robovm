@@ -16,17 +16,18 @@ include(${CMAKE_SOURCE_DIR}/MergeStaticLibObjectFiles.cmake)
 enable_testing()
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "debug")
+  set(CMAKE_BUILD_TYPE "Debug")
 endif()
-
 
 if(NOT OS)
   message(WARNING "OS not set, trying to determine automatically")
-  IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  IF(DEVKITA64)
+    SET(OS switch)
+    SET(ARCH arm64)
+  ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(OS "macosx")
     SET(ARCH "x86_64")
-  ENDIF()
-  IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     SET(OS "linux")
     SET(ARCH "x86_64")
   ENDIF()
@@ -52,9 +53,9 @@ elseif(OS STREQUAL "ios")
   set(IOS YES)
   set(DARWIN YES)
   set(OS_FAMILY darwin)
-elseif(OS STREQUAL "switch")
-  set(HORIZON YES)
-  set(OS_FAMILY horizon)
+elseif(OS STREQUAL switch)
+  set(SWITCH YES)
+  set(OS_FAMILY switch)
 endif()
 
 set(64_BIT NO)
@@ -128,7 +129,7 @@ endif()
 set(C_FLAGS "${C_FLAGS} -std=gnu11 -fPIC")
 set(CXX_FLAGS "${CXX_FLAGS} -std=gnu++11 -fPIC")
 set(C_CXX_FLAGS "${C_CXX_FLAGS} -Wall -fdata-sections -ffunction-sections -fPIC")
-if(HORIZON)
+if(SWITCH)
   set(C_CXX_FLAGS "${C_CXX_FLAGS}")
 elseif(CARCH)
   set(C_CXX_FLAGS "${C_CXX_FLAGS} -arch ${CARCH}")
@@ -155,7 +156,7 @@ endif()
 
 # Linker flags
 set(LD_FLAGS "${LD_FLAGS} -fPIC")
-if(HORIZON)
+if(SWITCH)
   set(LD_FLAGS "${LD_FLAGS}")
 elseif(CARCH)
   set(LD_FLAGS "${LD_FLAGS} -arch ${CARCH}")
@@ -187,7 +188,7 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${LD_FLAGS}")
 
 # Assembler flags
 set(ASM_FLAGS "${ASM_FLAGS} -fPIC")
-if(HORIZON)
+if(SWITCH)
   set(ASM_FLAGS "${ASM_FLAGS} -c")
 elseif(CARCH)
   set(ASM_FLAGS "${ASM_FLAGS} -c -arch ${CARCH}")
@@ -217,8 +218,8 @@ elseif(DARWIN)
     add_definitions(-DIOS)
   endif()
   add_definitions(-DDARWIN)
-elseif(HORIZON)
-  add_definitions(-DHORIZON)
+elseif(SWITCH)
+  # __SWITCH__ set by toolchain
 endif()
 
 if (ARCH STREQUAL "x86_64")
@@ -280,19 +281,17 @@ if (IOS)
     set(EXT_HOST --host=arm-apple-darwin7)
   endif()
 endif()
-if (HORIZON)
+if (SWITCH)
   set(EXT_PATH "$ENV{PATH}:${DEVKITA64}/bin")
-  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX") # -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS
   set(EXT_HOST --host=aarch64-none-elf)
-  set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-munmap=no --enable-parallel-mark=no") # FIXME
-#  add_definitions(-DNN_BUILD_TARGET_PLATFORM_NX -DNINTENDO_SWITCH -DGC_NO_DLOPEN -DGC_NO_THREAD_REDIRECTS)
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/core/include/horizon")
-#  add_definitions(-D_SYS__PTHREADTYPES_H_ -D_SYS_SIGNAL_H -D_SIGNAL_H_) # FIXME amazingly hacky
+  # FIXME move USE_MMAP_ANON into bdwgc
+  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DUSE_MMAP_ANON -I'${CMAKE_CURRENT_SOURCE_DIR}/core/include/switch'")
+  set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-threads=switch")
+  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/core/include/switch")
 endif()
 ExternalProject_Add(libatomic_ops
   GIT_REPOSITORY https://github.com/ivmai/libatomic_ops.git
   GIT_TAG 4e22546e8a161b6bab93e43c115a22151daf45c5
-  UPDATE_COMMAND ""
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""
@@ -301,8 +300,7 @@ ExternalProject_Add(libatomic_ops
 ExternalProject_Add(extgc
   DEPENDS libatomic_ops
   GIT_REPOSITORY https://github.com/encounter/bdwgc.git
-  GIT_TAG 91a1b8b326215475d2dae8b2ca0b7c0d917ff438
-  UPDATE_COMMAND ""
+  GIT_TAG 1af1317f2307b40d85abd3748e2564e331ab865f
   PATCH_COMMAND bash -c "rm -rf libatomic_ops && ln -s ../../../libatomic_ops-prefix/src/libatomic_ops libatomic_ops"
   CONFIGURE_COMMAND bash -xc "./autogen.sh && PATH='${EXT_PATH}' CC=${EXTGC_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' AR='${CMAKE_AR}' RANLIB='${CMAKE_RANLIB}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
   BUILD_COMMAND bash -xc "export PATH='${EXT_PATH}' make"
