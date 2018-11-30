@@ -220,6 +220,7 @@ elseif(DARWIN)
   add_definitions(-DDARWIN)
 elseif(SWITCH)
   # __SWITCH__ set by toolchain
+  include_directories("$ENV{HOME}/Development/rvm-nx-support/include") # FIXME
 endif()
 
 if (ARCH STREQUAL "x86_64")
@@ -284,10 +285,8 @@ endif()
 if (SWITCH)
   set(EXT_PATH "$ENV{PATH}:${DEVKITA64}/bin")
   set(EXT_HOST --host=aarch64-none-elf)
-  # FIXME move USE_MMAP_ANON into bdwgc
-  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DUSE_MMAP_ANON -I'${CMAKE_CURRENT_SOURCE_DIR}/core/include/switch'")
-  set(EXTGC_PARAMS "${EXTGC_PARAMS} --enable-threads=switch")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/core/include/switch")
+  set(EXTGC_C_FLAGS "${EXTGC_C_FLAGS} -DNN_BUILD_TARGET_PLATFORM_NX -DGC_PTHREADS -DUSE_PTHREAD_SPECIFIC -I'$ENV{HOME}/Development/rvm-nx-support/include'")
+  set(EXTGC_PARAMS "${EXTGC_PARAMS} --disable-mmap --disable-munmap --enable-threads=switch")
 endif()
 ExternalProject_Add(libatomic_ops
   GIT_REPOSITORY https://github.com/ivmai/libatomic_ops.git
@@ -300,7 +299,7 @@ ExternalProject_Add(libatomic_ops
 ExternalProject_Add(extgc
   DEPENDS libatomic_ops
   GIT_REPOSITORY https://github.com/encounter/bdwgc.git
-  GIT_TAG 1af1317f2307b40d85abd3748e2564e331ab865f
+  GIT_TAG e2cd55b391ddf575ed81fca805930909577d1844
   PATCH_COMMAND bash -c "rm -rf libatomic_ops && ln -s ../../../libatomic_ops-prefix/src/libatomic_ops libatomic_ops"
   CONFIGURE_COMMAND bash -xc "./autogen.sh && PATH='${EXT_PATH}' CC=${EXTGC_C_COMPILER} CFLAGS='${EXTGC_C_FLAGS}' LDFLAGS='${EXTGC_LD_FLAGS}' AR='${CMAKE_AR}' RANLIB='${CMAKE_RANLIB}' ./configure ${EXT_HOST} ${EXTGC_PARAMS} --prefix=${CMAKE_BINARY_DIR}/gc"
   BUILD_COMMAND bash -xc "export PATH='${EXT_PATH}' make"

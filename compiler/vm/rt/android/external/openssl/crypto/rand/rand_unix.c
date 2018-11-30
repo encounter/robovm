@@ -398,8 +398,10 @@ int RAND_poll(void)
 	/* put in some default random data, we need more than just this */
 	l=curr_pid;
 	RAND_add(&l,sizeof(l),0.0);
+#ifndef __SWITCH__
 	l=getuid();
 	RAND_add(&l,sizeof(l),0.0);
+#endif
 
 	l=time(NULL);
 	RAND_add(&l,sizeof(l),0.0);

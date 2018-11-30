@@ -31,7 +31,7 @@
 #include "utlist.h"
 #include <unistd.h>
 
-#if !defined(NDEBUG) && !defined(__SWITCH__)
+#if !defined(NDEBUG)
 #   include <execinfo.h>
 #endif
 
@@ -80,11 +80,9 @@ static char* absolutize(char* basePath, char* rel, char* dest) {
 }
 
 static jboolean ignoreSignal(int signo) {
-#ifndef __SWITCH__
     if (signal(signo, SIG_IGN) == SIG_ERR) {
         return FALSE;
     }
-#endif
     return TRUE;
 }
 
@@ -218,13 +216,13 @@ static void parseRoboVMIni(Options* options) {
 }
 
 jboolean rvmInitOptions(int argc, char* argv[], Options* options, jboolean ignoreRvmArgs) {
+#ifndef __SWITCH__
     if (argc > 0) {
         // We're called from a RoboVM executable
         if (!realpath(argv[0], options->imagePath)) {
             return FALSE;
         }
     }
-#ifndef __SWITCH__
     else {
         // We're called via JNI. The caller could already have set
         // imagePath. If not we try to determine it via dladdr().
@@ -339,7 +337,6 @@ Env* rvmStartup(Options* options) {
     TRACE("Initializing GC");
     if (!initGC(options)) return NULL;
 
-#ifndef __SWITCH__
     // Ignore SIGPIPE signals. SIGPIPE interrupts write() calls which we don't
     // want. Dalvik does this too in dalvikvm/Main.cpp.
     if (!ignoreSignal(SIGPIPE)) return NULL;
@@ -347,7 +344,6 @@ Env* rvmStartup(Options* options) {
     // Ignore SIGXFSZ signals. SIGXFSZ is raised when writing beyond the RLIMIT_FSIZE
     // of the current process (at least on Darwin) using pwrite().
     if (!ignoreSignal(SIGXFSZ)) return NULL;
-#endif
 
     VM* vm = rvmCreateVM(options);
     if (!vm) return NULL;
@@ -539,7 +535,7 @@ void rvmAbort(char* format, ...) {
         va_end(args);
         fprintf(stderr, "\n");
     }
-#if !defined(NDEBUG) && !defined(__SWITCH__)
+#if !defined(NDEBUG)
      void* callstack[256];
      int frames = backtrace(callstack, 256);
      char** strs = backtrace_symbols(callstack, frames);

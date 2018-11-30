@@ -91,7 +91,10 @@ static pid_t ExecuteProcess(JNIEnv* env, char** commands, char** environment,
                             const char* workingDirectory, jobject inDescriptor,
                             jobject outDescriptor, jobject errDescriptor,
                             jboolean redirectErrorStream) {
-
+#ifdef __SWITCH__
+  printf("Called unimplemented method java.lang.ProcessManager.exec(\"%s\")\n", commands[0]);
+  return -1;
+#else
   // Create 4 pipes: stdin, stdout, stderr, and an exec() status pipe.
   int pipes[PIPE_COUNT * 2] = { -1, -1, -1, -1, -1, -1, -1, -1 };
   for (int i = 0; i < PIPE_COUNT; i++) {
@@ -201,6 +204,7 @@ static pid_t ExecuteProcess(JNIEnv* env, char** commands, char** environment,
   jniSetFileDescriptorOfFD(env, errDescriptor, stderrIn);
 
   return childPid;
+#endif
 }
 
 /**

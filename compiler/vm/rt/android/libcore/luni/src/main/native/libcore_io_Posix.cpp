@@ -371,6 +371,7 @@ static jobject doGetSockName(JNIEnv* env, jobject javaFd, bool is_sockname) {
   return makeSocketAddress(env, ss);
 }
 
+#ifndef __SWITCH__
 class Passwd {
 public:
     Passwd(JNIEnv* env) : mEnv(env), mResult(NULL) {
@@ -406,6 +407,7 @@ private:
     struct passwd mPwd;
     struct passwd* mResult;
 };
+#endif
 
 extern "C" jobject Java_libcore_io_Posix_accept(JNIEnv* env, jobject, jobject javaFd, jobject javaInetSocketAddress) {
     sockaddr_storage ss;
@@ -453,11 +455,15 @@ extern "C" void Java_libcore_io_Posix_chmod(JNIEnv* env, jobject, jstring javaPa
 }
 
 extern "C" void Java_libcore_io_Posix_chown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.chown()\n");
+#else
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
     }
     throwIfMinusOne(env, "chown", TEMP_FAILURE_RETRY(chown(path.c_str(), uid, gid)));
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_close(JNIEnv* env, jobject, jobject javaFd) {
@@ -531,6 +537,9 @@ extern "C" void Java_libcore_io_Posix_execve(JNIEnv* env, jobject, jstring javaF
 }
 
 extern "C" void Java_libcore_io_Posix_execv(JNIEnv* env, jobject, jstring javaFilename, jobjectArray javaArgv) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.execv()\n");
+#else
     ScopedUtfChars path(env, javaFilename);
     if (path.c_str() == NULL) {
         return;
@@ -540,6 +549,7 @@ extern "C" void Java_libcore_io_Posix_execv(JNIEnv* env, jobject, jstring javaFi
     execv(path.c_str(), argv.get());
 
     throwErrnoException(env, "execv");
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_fchmod(JNIEnv* env, jobject, jobject javaFd, jint mode) {
@@ -548,8 +558,12 @@ extern "C" void Java_libcore_io_Posix_fchmod(JNIEnv* env, jobject, jobject javaF
 }
 
 extern "C" void Java_libcore_io_Posix_fchown(JNIEnv* env, jobject, jobject javaFd, jint uid, jint gid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.fchown()\n");
+#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fchown", TEMP_FAILURE_RETRY(fchown(fd, uid, gid)));
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_fcntlVoid(JNIEnv* env, jobject, jobject javaFd, jint cmd) {
@@ -592,8 +606,12 @@ extern "C" jint Java_libcore_io_Posix_fcntlFlock(JNIEnv* env, jobject, jobject j
 }
 
 extern "C" void Java_libcore_io_Posix_fdatasync(JNIEnv* env, jobject, jobject javaFd) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.fdatasync()\n");
+#else
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "fdatasync", TEMP_FAILURE_RETRY(fdatasync(fd)));
+#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_fstat(JNIEnv* env, jobject, jobject javaFd) {
@@ -705,15 +723,30 @@ extern "C" jobjectArray Java_libcore_io_Posix_getaddrinfo(JNIEnv* env, jobject, 
 }
 
 extern "C" jint Java_libcore_io_Posix_getegid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getegid()\n");
+    return 0;
+#else
     return getegid();
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_geteuid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.geteuid()\n");
+    return 0;
+#else
     return geteuid();
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_getgid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getgid()\n");
+    return 0;
+#else
     return getgid();
+#endif
 }
 
 extern "C" jstring Java_libcore_io_Posix_getenv(JNIEnv* env, jobject, jstring javaName) {
@@ -745,23 +778,43 @@ extern "C" jobject Java_libcore_io_Posix_getpeername(JNIEnv* env, jobject, jobje
 }
 
 extern "C" jint Java_libcore_io_Posix_getpid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getpid()\n");
+    return 0;
+#else
     return getpid();
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_getppid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getppid()\n");
+    return 0;
+#else
     return getppid();
+#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_getpwnam(JNIEnv* env, jobject, jstring javaName) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getpwnam()\n");
+    return nullptr;
+#else
     ScopedUtfChars name(env, javaName);
     if (name.c_str() == NULL) {
         return NULL;
     }
     return Passwd(env).getpwnam(name.c_str());
+#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_getpwuid(JNIEnv* env, jobject, jint uid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getpwuid()\n");
+    return nullptr;
+#else
     return Passwd(env).getpwuid(uid);
+#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_getsockname(JNIEnv* env, jobject, jobject javaFd) {
@@ -880,12 +933,18 @@ extern "C" jint Java_libcore_io_Posix_gettid(JNIEnv*, jobject) {
 #endif
 
 extern "C" jint Java_libcore_io_Posix_getuid(JNIEnv*, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.getuid()\n");
+    return 0;
+#else
     return getuid();
+#endif
 }
 
 extern "C" jstring Java_libcore_io_Posix_if_1indextoname(JNIEnv* env, jobject, jint index) {
 #ifdef __SWITCH__
-    return NULL;
+    printf("Called unimplemented method libcore.io.Posix.if_1indextoname()\n");
+    return nullptr;
 #else
     char buf[IF_NAMESIZE];
     char* name = if_indextoname(index, buf);
@@ -945,15 +1004,21 @@ extern "C" jboolean Java_libcore_io_Posix_isatty(JNIEnv* env, jobject, jobject j
 extern "C" void Java_libcore_io_Posix_kill(JNIEnv* env, jobject, jint pid, jint sig) {
 #ifndef __SWITCH__
     throwIfMinusOne(env, "kill", TEMP_FAILURE_RETRY(kill(pid, sig)));
+#else
+    printf("Called unimplemented method libcore.io.Posix.kill()\n");
 #endif
 }
 
 extern "C" void Java_libcore_io_Posix_lchown(JNIEnv* env, jobject, jstring javaPath, jint uid, jint gid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.lchown()\n");
+#else
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return;
     }
     throwIfMinusOne(env, "lchown", TEMP_FAILURE_RETRY(lchown(path.c_str(), uid, gid)));
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_listen(JNIEnv* env, jobject, jobject javaFd, jint backlog) {
@@ -982,6 +1047,8 @@ extern "C" void Java_libcore_io_Posix_mincore(JNIEnv* env, jobject, jlong addres
     void* ptr = reinterpret_cast<void*>(static_cast<uintptr_t>(address));
     unsigned char* vec = reinterpret_cast<unsigned char*>(vector.get());
     throwIfMinusOne(env, "mincore", TEMP_FAILURE_RETRY(mincore(ptr, byteCount, vec)));
+#else
+    printf("Called unimplemented method libcore.io.Posix.mincore()\n");
 #endif
 }
 
@@ -1033,6 +1100,10 @@ extern "C" jobject Java_libcore_io_Posix_open(JNIEnv* env, jobject, jstring java
 }
 
 extern "C" jobjectArray Java_libcore_io_Posix_pipe(JNIEnv* env, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.pipe()\n");
+    return nullptr;
+#else
     int fds[2];
     throwIfMinusOne(env, "pipe", TEMP_FAILURE_RETRY(pipe(&fds[0])));
     jobjectArray result = env->NewObjectArray(2, JniConstants::fileDescriptorClass, NULL);
@@ -1050,6 +1121,7 @@ extern "C" jobjectArray Java_libcore_io_Posix_pipe(JNIEnv* env, jobject) {
         }
     }
     return result;
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint timeoutMs) {
@@ -1103,27 +1175,31 @@ extern "C" jint Java_libcore_io_Posix_poll(JNIEnv* env, jobject, jobjectArray ja
 }
 
 extern "C" jint Java_libcore_io_Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.preadBytes()\n");
+    return 0;
+#else
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef __SWITCH__
-#define pread64 pread
-#endif
     return throwIfMinusOne(env, "pread", TEMP_FAILURE_RETRY(pread64(fd, bytes.get() + byteOffset, byteCount, offset)));
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.pwriteBytes()\n");
+    return 0;
+#else
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
-#ifdef __SWITCH__
-#define pwrite64 pwrite
-#endif
     return throwIfMinusOne(env, "pwrite", TEMP_FAILURE_RETRY(pwrite64(fd, bytes.get() + byteOffset, byteCount, offset)));
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
@@ -1136,12 +1212,17 @@ extern "C" jint Java_libcore_io_Posix_readBytes(JNIEnv* env, jobject, jobject ja
 }
 
 extern "C" jint Java_libcore_io_Posix_readv(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.readv()\n");
+    return 0;
+#else
     IoVec<ScopedBytesRW> ioVec(env, env->GetArrayLength(buffers));
     if (!ioVec.init(buffers, offsets, byteCounts)) {
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return throwIfMinusOne(env, "readv", TEMP_FAILURE_RETRY(readv(fd, ioVec.get(), ioVec.size())));
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_recvfromBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetSocketAddress) {
@@ -1207,6 +1288,7 @@ extern "C" void Java_libcore_io_Posix_rename(JNIEnv* env, jobject, jstring javaO
 
 extern "C" jlong Java_libcore_io_Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
 #ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.sendfile()\n");
     return 0;
 #else
     int outFd = jniGetFDFromFileDescriptor(env, javaOutFd);
@@ -1269,7 +1351,11 @@ extern "C" jint Java_libcore_io_Posix_sendtoBytes(JNIEnv* env, jobject, jobject 
 }
 
 extern "C" void Java_libcore_io_Posix_setegid(JNIEnv* env, jobject, jint egid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.setegid()\n");
+#else
     throwIfMinusOne(env, "setegid", TEMP_FAILURE_RETRY(setegid(egid)));
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_setenv(JNIEnv* env, jobject, jstring javaName, jstring javaValue, jboolean overwrite) {
@@ -1285,15 +1371,28 @@ extern "C" void Java_libcore_io_Posix_setenv(JNIEnv* env, jobject, jstring javaN
 }
 
 extern "C" void Java_libcore_io_Posix_seteuid(JNIEnv* env, jobject, jint euid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.seteuid()\n");
+#else
     throwIfMinusOne(env, "seteuid", TEMP_FAILURE_RETRY(seteuid(euid)));
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_setgid(JNIEnv* env, jobject, jint gid) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.setgid()\n");
+#else
     throwIfMinusOne(env, "setgid", TEMP_FAILURE_RETRY(setgid(gid)));
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_setsid(JNIEnv* env, jobject) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.setsid()\n");
+    return 0;
+#else
     return throwIfMinusOne(env, "setsid", TEMP_FAILURE_RETRY(setsid()));
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_setsockoptByte(JNIEnv* env, jobject, jobject javaFd, jint level, jint option, jint value) {
@@ -1502,6 +1601,9 @@ extern "C" jstring Java_libcore_io_Posix_strsignal(JNIEnv* env, jobject, jint si
 }
 
 extern "C" void Java_libcore_io_Posix_symlink(JNIEnv* env, jobject, jstring javaOldPath, jstring javaNewPath) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.symlink()\n");
+#else
     ScopedUtfChars oldPath(env, javaOldPath);
     if (oldPath.c_str() == NULL) {
         return;
@@ -1511,9 +1613,14 @@ extern "C" void Java_libcore_io_Posix_symlink(JNIEnv* env, jobject, jstring java
         return;
     }
     throwIfMinusOne(env, "symlink", TEMP_FAILURE_RETRY(symlink(oldPath.c_str(), newPath.c_str())));
+#endif
 }
 
 extern "C" jlong Java_libcore_io_Posix_sysconf(JNIEnv* env, jobject, jint name) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.sysconf()\n");
+    return 0;
+#else
     // Since -1 is a valid result from sysconf(3), detecting failure is a little more awkward.
     errno = 0;
     long result = sysconf(name);
@@ -1521,12 +1628,15 @@ extern "C" jlong Java_libcore_io_Posix_sysconf(JNIEnv* env, jobject, jint name) 
         throwErrnoException(env, "sysconf");
     }
     return result;
+#endif
 }
 
 extern "C" void Java_libcore_io_Posix_tcdrain(JNIEnv* env, jobject, jobject javaFd) {
 #ifndef __SWITCH__
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     throwIfMinusOne(env, "tcdrain", TEMP_FAILURE_RETRY(tcdrain(fd)));
+#else
+    printf("Called unimplemented method libcore.io.Posix.tcdrain()\n");
 #endif
 }
 
@@ -1534,16 +1644,24 @@ extern "C" void Java_libcore_io_Posix_tcsendbreak(JNIEnv* env, jobject, jobject 
 #ifndef __SWITCH__
   int fd = jniGetFDFromFileDescriptor(env, javaFd);
   throwIfMinusOne(env, "tcsendbreak", TEMP_FAILURE_RETRY(tcsendbreak(fd, duration)));
+#else
+    printf("Called unimplemented method libcore.io.Posix.tcsendbreak()\n");
 #endif
 }
 
 extern "C" jint Java_libcore_io_Posix_umaskImpl(JNIEnv*, jobject, jint mask) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.umask()\n");
+    return 0;
+#else
     return umask(mask);
+#endif
 }
 
 extern "C" jobject Java_libcore_io_Posix_uname(JNIEnv* env, jobject) {
 #ifdef __SWITCH__
-    return NULL; // FIXME implement
+    printf("Called unimplemented method libcore.io.Posix.uname()\n");
+    return NULL; // FIXME implement?
 #else
     struct utsname buf;
     if (TEMP_FAILURE_RETRY(uname(&buf)) == -1) {
@@ -1562,6 +1680,10 @@ extern "C" void Java_libcore_io_Posix_unsetenv(JNIEnv* env, jobject, jstring jav
 }
 
 extern "C" jint Java_libcore_io_Posix_waitpid(JNIEnv* env, jobject, jint pid, jobject javaStatus, jint options) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.waitpid()\n");
+    return 0;
+#else
     int status;
     int rc = throwIfMinusOne(env, "waitpid", TEMP_FAILURE_RETRY(waitpid(pid, &status, options)));
     if (rc != -1) {
@@ -1569,6 +1691,7 @@ extern "C" jint Java_libcore_io_Posix_waitpid(JNIEnv* env, jobject, jint pid, jo
         env->SetIntField(javaStatus, valueFid, status);
     }
     return rc;
+#endif
 }
 
 extern "C" jint Java_libcore_io_Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
@@ -1581,11 +1704,16 @@ extern "C" jint Java_libcore_io_Posix_writeBytes(JNIEnv* env, jobject, jobject j
 }
 
 extern "C" jint Java_libcore_io_Posix_writev(JNIEnv* env, jobject, jobject javaFd, jobjectArray buffers, jintArray offsets, jintArray byteCounts) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method libcore.io.Posix.writev()\n");
+    return 0;
+#else
     IoVec<ScopedBytesRO> ioVec(env, env->GetArrayLength(buffers));
     if (!ioVec.init(buffers, offsets, byteCounts)) {
         return -1;
     }
     int fd = jniGetFDFromFileDescriptor(env, javaFd);
     return throwIfMinusOne(env, "writev", TEMP_FAILURE_RETRY(writev(fd, ioVec.get(), ioVec.size())));
+#endif
 }
 

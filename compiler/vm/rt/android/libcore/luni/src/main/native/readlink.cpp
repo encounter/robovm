@@ -21,6 +21,10 @@
 #include <unistd.h>
 
 bool readlink(const char* path, std::string& result) {
+#ifdef __SWITCH__
+    printf("Called unimplemented method readlink(\"%s\")\n", path);
+    return false;
+#else
     // We can't know how big a buffer readlink(2) will need, so we need to
     // loop until it says "that fit".
     size_t bufSize = 512;
@@ -39,4 +43,5 @@ bool readlink(const char* path, std::string& result) {
         // Try again with a bigger buffer.
         bufSize *= 2;
     }
+#endif
 }

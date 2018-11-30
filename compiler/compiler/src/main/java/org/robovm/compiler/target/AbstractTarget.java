@@ -144,7 +144,9 @@ public abstract class AbstractTarget implements Target {
             libs.add("Foundation");
         }
         if (OS.Family.horizon.equals(config.getOs().getFamily())) {
-            libs.add("-lnx"); // FIXME add pthread here?
+            libs.addAll(Arrays.asList("-L/home/lstreet/Development/rvm-nx-support/cmake-build-debug-devkita64", // FIXME x_x
+                                      "-Wl,--whole-archive", "-lrvm_nx_support" + libSuffix, "-Wl,--no-whole-archive"));
+            libs.add("-lnx");
         }
 
         ccArgs.add("-L");

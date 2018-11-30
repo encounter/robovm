@@ -40,8 +40,7 @@ if(DARWIN)
   set_property(SOURCE ${OBJC_SRC} PROPERTY LANGUAGE C)
   set_property(SOURCE ${OBJC_SRC} PROPERTY COMPILE_FLAGS ${OBJC_FLAGS})
 elseif(SWITCH)
-  # FIXME move into lib
-  set(SRC ${SRC} switch/pthread.c switch/signal.c switch/mman.c)
+  include_directories("$ENV{HOME}/Development/rvm-nx-support/include")
 endif()
 
 # The code in unwind.c doesn't work properly if compiled with tail call optimizations
